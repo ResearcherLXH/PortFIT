@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PortFIT: Port Footprint and Infrastructure planning Tool for hydrogen and e-fuels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#eef1f4; --surface:#ffffff; --surface2:#f6f8fa; --ink:#1d2933; --ink2:#44525e; --muted:#7a8792;
+  --line:#d5dbe1; --line2:#e7ebef;
+  --slate:#34506f; --slate-soft:#dfe5ec; --amber:#a86a12; --amber-soft:#fbefd8; --amber-line:#e2b35e;
+  --caution:#b0533c; --caution-soft:#f6e3de; --ok:#2e7d4f; --ok-soft:#e1f1e7; --water:#3f7cb0;
+  --fuel:#2f6fb5; --fuel-soft:#e3ecf7;
+  --radius-l:12px; --radius-s:6px;
+  --shadow:0 1px 2px rgba(29,41,51,.06),0 6px 18px rgba(29,41,51,.05);
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#11171d; --surface:#18212a; --surface2:#1e2832; --ink:#e3e9ee; --ink2:#b4c0ca; --muted:#8593a0;
+    --line:#2d3a46; --line2:#24303b;
+    --slate:#9fb7d1; --slate-soft:#26364a; --amber:#e3a94f; --amber-soft:#3a2d17; --amber-line:#7a5a26;
+    --caution:#e08a72; --caution-soft:#3d2620; --ok:#7fc79b; --ok-soft:#1c3427; --water:#7fb0dc;
+    --fuel-soft:#1f2d3c; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#11171d; --surface:#18212a; --surface2:#1e2832; --ink:#e3e9ee; --ink2:#b4c0ca; --muted:#8593a0;
+  --line:#2d3a46; --line2:#24303b;
+  --slate:#9fb7d1; --slate-soft:#26364a; --amber:#e3a94f; --amber-soft:#3a2d17; --amber-line:#7a5a26;
+  --caution:#e08a72; --caution-soft:#3d2620; --ok:#7fc79b; --ok-soft:#1c3427; --water:#7fb0dc;
+  --fuel-soft:#1f2d3c; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font:14px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+.eq,.num,code,.mono{font-family:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace}
+h1,h2,h3{margin:0; font-weight:600; letter-spacing:-.01em}
+button,input,select,textarea{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--fuel); outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+.top{max-width:1440px; margin:0 auto; padding:24px 24px 8px; display:grid; grid-template-columns:1fr auto; gap:16px; align-items:end}
+.top h1{font-size:25px; line-height:1.15}
+.top p{margin:6px 0 0; color:var(--ink2); max-width:80ch}
+.hdrbtns{display:flex; flex-direction:column; gap:8px; align-items:flex-end}
+.howto{font-size:13px; background:var(--fuel-soft); border-radius:8px; padding:6px 10px; margin-top:8px!important}
+.howto a{color:var(--fuel)}
+.about{font-size:12.5px; color:var(--ink2)}
+.about a{color:var(--fuel)}
+.refs ol{margin:0; padding-left:22px}
+.refs li{margin:0 0 6px; break-inside:avoid}
+.refs a{color:var(--fuel); word-break:break-all}
+.anchor .srcref{color:var(--fuel); font-family:"IBM Plex Mono",monospace}
+.beta{max-width:1440px; margin:6px auto 0; padding:0 24px}
+.beta .box{border:1px solid var(--amber-line); background:var(--amber-soft); border-radius:12px; padding:10px 14px; font-size:13px; color:var(--ink)}
+.beta .box b{color:var(--amber)}
+.beta .box a{color:var(--fuel)}
+@media (max-width:640px){ .beta{padding:0 12px} }
+.task{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:10px}
+.task h3{font-size:14px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap}
+.task h3 .tm{font-size:12px; color:var(--muted); font-weight:400}
+.task ol{margin:6px 0 4px; padding-left:20px; font-size:13px; color:var(--ink2)}
+.task ol li{margin-bottom:3px}
+.task label.done{font-size:12.5px; display:inline-flex; gap:6px; align-items:center; margin-top:4px}
+.fb .q{margin:12px 0 4px; font-size:13.5px; font-weight:600}
+.fb .sub{font-size:12px; color:var(--muted); margin-bottom:4px}
+.fb textarea{width:100%; min-height:64px; padding:8px; border:1px solid var(--line); border-radius:6px; background:var(--surface2); color:var(--ink); font:inherit; font-size:13px}
+.fb select{padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--surface2); color:var(--ink)}
+.fb .radios{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px}
+.fb .radios label{display:inline-flex; gap:5px; align-items:center}
+table.likert{width:100%; border-collapse:collapse; font-size:12.5px}
+table.likert td, table.likert th{padding:5px 4px; border-bottom:1px solid var(--line2); text-align:center}
+table.likert td:first-child, table.likert th:first-child{text-align:left}
+table.likert th{color:var(--muted); font-weight:500; font-size:11.5px}
+.fbmsg{margin-top:10px; font-size:13px}
+.resp{border-top:1px solid var(--line2); padding:8px 0; font-size:12.5px}
+.resp .who{font-weight:600}
+.resp .meta{color:var(--muted)}
+.resp .txt{white-space:pre-wrap; color:var(--ink2); margin-top:2px}
+.badge-demo{font-size:12px; color:var(--amber); background:var(--amber-soft); border:1px solid var(--amber-line); border-radius:999px; padding:4px 10px; white-space:nowrap}
+.pill{background:transparent; border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:12px; color:var(--ink2); cursor:pointer}
+.pill.on{border-color:var(--fuel); color:var(--fuel)}
+
+.wrap{max-width:1440px; margin:0 auto; padding:14px 24px 60px}
+.layout{display:grid; grid-template-columns:minmax(0,1fr) 450px; gap:20px; align-items:start}
+@media (max-width:1120px){ .layout{grid-template-columns:minmax(0,1fr)} }
+.sticky{position:sticky; top:calc(12px + env(safe-area-inset-top,0px))}
+@media (max-width:1120px){ .sticky{position:static} }
+@media (max-width:640px){ .wrap{padding:12px 12px 40px} .top{padding:18px 12px 6px; grid-template-columns:1fr} .hdrbtns{align-items:flex-start} }
+
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-l); box-shadow:var(--shadow); margin-bottom:18px}
+.panel > .hd{display:flex; align-items:baseline; gap:10px; padding:16px 18px 4px; flex-wrap:wrap}
+.panel > .hd .n{font-family:"IBM Plex Mono",monospace; color:var(--fuel); font-weight:500}
+.panel > .hd h2{font-size:17px}
+.panel > .lead{color:var(--ink2); font-size:13px; margin:2px 18px 10px; max-width:84ch}
+.panel > .bd{padding:4px 18px 18px}
+@media (max-width:640px){ .panel > .bd{padding:4px 12px 14px} .panel > .lead{margin:2px 12px 10px} .panel > .hd{padding:14px 12px 4px} }
+
+/* overview */
+.steps{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px}
+.steps a{font-size:12.5px; text-decoration:none; color:var(--ink2); border:1px solid var(--line); border-radius:999px; padding:3px 10px; background:var(--surface2)}
+.steps a b{font-family:"IBM Plex Mono",monospace; color:var(--fuel); margin-right:4px; font-weight:500}
+.ovgrid{display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:18px}
+@media (max-width:900px){ .ovgrid{grid-template-columns:minmax(0,1fr)} }
+.chainbox{border:1px solid var(--line); border-left:5px solid var(--fc,var(--fuel)); border-radius:10px; padding:10px 12px 8px; margin-bottom:10px; background:var(--surface)}
+.roleline{display:flex; flex-wrap:wrap; gap:4px 16px; align-items:baseline; margin-bottom:8px; font-size:13px}
+.roleline .fuelname{font-weight:700; color:var(--fc,var(--fuel))}
+.roleline .role{color:var(--ink2)} .roleline .role b{color:var(--ink)}
+.roleline .match{margin-left:auto; font-size:12px; color:var(--ink2)}
+.chain{display:grid; grid-template-columns:repeat(8,minmax(0,1fr))}
+.chain .fn{padding:0 5px 0 0}
+.chain .fn + .fn{border-left:1px dashed var(--line); padding-left:8px}
+.chain .fnname{font-size:11px; color:var(--muted); margin-bottom:3px}
+@media (max-width:900px){ .chain{grid-template-columns:repeat(4,minmax(0,1fr)); row-gap:8px} .chain .fn:nth-child(5){border-left:none; padding-left:0} }
+.chip{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:11px; padding:1px 6px; border-radius:var(--radius-s); margin:0 3px 3px 0; border:1px solid var(--line); background:var(--surface2); color:var(--ink2)}
+.chip.on{background:var(--fuel-soft); border-color:var(--fc,var(--fuel)); color:var(--ink)}
+.chip.niche{border-style:dashed}
+.chip .pct{color:var(--muted); margin-left:3px}
+.legendrow{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--ink2); align-items:center; margin-top:4px}
+.kres{background:var(--surface2); border-radius:10px; padding:12px}
+.kres .k{font-size:12px; color:var(--muted)}
+.kres .v{font-family:"IBM Plex Mono",monospace; font-size:20px}
+.kres .v small{font-size:12px; color:var(--muted)}
+.kres .row{margin-bottom:8px}
+.status{display:inline-block; font-size:12px; padding:2px 8px; border-radius:999px; margin-top:4px}
+.status.ok{background:var(--ok-soft); color:var(--ok)} .status.warn{background:var(--amber-soft); color:var(--amber)} .status.bad{background:var(--caution-soft); color:var(--caution)}
+
+/* forms */
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px}
+.field label{display:block; font-size:12.5px; color:var(--ink2); margin-bottom:4px}
+.field input[type=number], .field input[type=text], .field select{width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:var(--radius-s); background:var(--surface2); color:var(--ink)}
+.field .hint{font-size:11.5px; color:var(--muted); margin-top:3px}
+.subh{font-size:13.5px; font-weight:600; margin:16px 0 6px}
+.landbar{display:flex; height:12px; border-radius:6px; overflow:hidden; background:var(--line2); margin-top:10px}
+.landbar span{display:block; height:100%}
+.seg{display:flex; flex-wrap:wrap; gap:6px}
+.seg button{background:var(--surface2); border:1px solid var(--line); border-radius:var(--radius-s); padding:5px 9px; cursor:pointer; font-size:12.5px}
+.seg button .c{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); margin-right:4px}
+.seg button.on{background:var(--fuel-soft); border-color:var(--fuel)}
+.seg button:disabled{opacity:.4; cursor:not-allowed}
+table.tbl{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:10px}
+table.tbl th, table.tbl td{padding:5px 4px; border-bottom:1px solid var(--line2); text-align:left; vertical-align:top}
+table.tbl th{font-size:11.5px; color:var(--muted); font-weight:500}
+table.tbl td.r, table.tbl th.r{text-align:right; font-family:"IBM Plex Mono",monospace}
+table.tbl input[type=number]{width:90px; padding:4px 6px; border:1px solid var(--line); border-radius:var(--radius-s); background:var(--surface2)}
+
+/* fuel tabs */
+.ftabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px}
+.ftabs button{border:1px solid var(--line); background:var(--surface2); border-radius:999px; padding:4px 12px; cursor:pointer; font-size:13px}
+.ftabs button i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:0}
+.ftabs button.on{border-color:var(--fuel); background:var(--fuel-soft); font-weight:600}
+
+/* config */
+.presets{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:8px}
+.preset{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 10px; text-align:left; cursor:pointer}
+.preset .code{font-family:"IBM Plex Mono",monospace; font-weight:500; color:var(--fuel); margin-right:6px}
+.preset .ev{float:right; font-size:11px; color:var(--muted)}
+.preset .ds{font-size:12.5px; color:var(--ink2); margin-top:2px}
+.preset.on{border-color:var(--fuel); box-shadow:inset 0 0 0 1px var(--fuel)}
+.note{font-size:12px; color:var(--muted); margin-top:8px}
+.mixgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px}
+@media (max-width:760px){ .mixgrid{grid-template-columns:minmax(0,1fr)} }
+.mixrow{display:grid; grid-template-columns:56px 1fr 92px 42px; gap:8px; align-items:center; padding:4px 0; border-top:1px solid var(--line2)}
+.mixrow .cd{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink2)}
+.mixrow .lb{font-size:13px}
+.mixrow input[type=range]{width:100%}
+.mixrow .pv{font-family:"IBM Plex Mono",monospace; font-size:12px; text-align:right; color:var(--ink2)}
+.mixrow.dis{opacity:.45}
+.rt{display:inline-flex; align-items:center; margin-left:5px; vertical-align:middle}
+.dot{display:inline-block; width:9px; height:9px; border-radius:50%; border:1.5px solid var(--fuel); box-sizing:border-box}
+.dot.d2{background:var(--fuel)}
+.dot.d1{background:linear-gradient(90deg,var(--fuel) 50%,transparent 50%)}
+.dot.d0{border:none; width:9px; height:2px; border-radius:1px; background:var(--muted)}
+.opts{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; margin-top:16px}
+.opt h3{font-size:13.5px; margin-bottom:6px}
+.opt .hint{font-size:12px; color:var(--muted); margin-top:5px}
+.notices{margin-top:14px; display:flex; flex-direction:column; gap:6px}
+.notice{font-size:12.5px; padding:7px 10px; border-radius:var(--radius-s); border-left:3px solid}
+.notice.warn{background:var(--amber-soft); border-color:var(--amber)}
+.notice.err{background:var(--caution-soft); border-color:var(--caution)}
+.notice.info{background:var(--surface2); border-color:var(--line)}
+
+/* facilities */
+.flows{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:6px}
+.flow{background:var(--surface2); border-radius:var(--radius-s); padding:8px 10px}
+.flow .k{font-size:11.5px; color:var(--muted)}
+.flow .v{font-family:"IBM Plex Mono",monospace; font-size:15px}
+.fgroup{margin-top:14px}
+.fgroup > .gh{display:flex; align-items:baseline; gap:8px; padding-bottom:4px; border-bottom:1px solid var(--line); flex-wrap:wrap}
+.fgroup > .gh .code{font-family:"IBM Plex Mono",monospace; color:var(--fuel); font-weight:500}
+.fgroup > .gh .t{font-weight:600}
+.fgroup > .gh .d{font-size:12px; color:var(--muted)}
+details.fac{border-bottom:1px solid var(--line2)}
+details.fac > summary{list-style:none; display:grid; grid-template-columns:70px 1fr auto; gap:10px; align-items:baseline; padding:8px 0; cursor:pointer}
+details.fac > summary::-webkit-details-marker{display:none}
+details.fac > summary .cd{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink2)}
+details.fac > summary .nm{font-weight:500}
+details.fac > summary .cap{display:block; font-size:12px; color:var(--muted); font-weight:400}
+details.fac > summary .fnote{display:block; font-size:12px; color:var(--slate); font-weight:500}
+details.fac > summary .land{font-family:"IBM Plex Mono",monospace; font-size:12.5px; text-align:right; color:var(--slate)}
+details.fac > summary .land small{display:block; color:var(--caution); font-size:11px}
+details.fac[open] > summary .nm{color:var(--fuel)}
+.facbody{padding:0 0 12px 80px}
+@media (max-width:640px){ .facbody{padding-left:0} details.fac > summary{grid-template-columns:56px 1fr auto} }
+.eqbox{overflow-x:auto; background:var(--amber-soft); border:1px solid var(--amber-line); border-radius:var(--radius-s); padding:7px 10px; font-size:12.5px; color:var(--amber); margin-bottom:8px; white-space:pre-wrap}
+.params{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:8px 16px}
+@media (max-width:640px){ .params{grid-template-columns:minmax(0,1fr)} }
+.param label{display:flex; justify-content:space-between; gap:8px; font-size:12.5px}
+.param label b{font-family:"IBM Plex Mono",monospace; font-weight:500}
+.param input{width:100%}
+.param .src{font-size:11px; color:var(--muted)}
+.gap{display:inline-block; font-size:10.5px; color:var(--amber); border:1px solid var(--amber-line); border-radius:999px; padding:0 6px; margin-left:4px}
+.choice{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px}
+.choice button{background:var(--surface2); border:1px solid var(--line); border-radius:var(--radius-s); padding:4px 8px; cursor:pointer; font-size:12px}
+.choice button.on{background:var(--fuel-soft); border-color:var(--fuel)}
+
+/* results */
+.landrows{display:flex; flex-direction:column; gap:12px; margin-top:4px}
+.lr .lt{display:flex; justify-content:space-between; gap:10px; align-items:baseline}
+.lr .lt .k{font-size:13px; color:var(--ink2)}
+.lr .lt .v{font-family:"IBM Plex Mono",monospace; font-size:20px; font-weight:500}
+.lr .lt .v small{font-size:12px; color:var(--muted); font-weight:400}
+.lr .rng{position:relative; height:10px; background:var(--line2); border-radius:5px; margin-top:6px}
+.lr .rng span{position:absolute; top:0; bottom:0; border-radius:5px}
+.lr .rng i{position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink)}
+.lr .sub{font-size:11.5px; color:var(--muted); margin-top:3px}
+.stack{display:flex; height:16px; border-radius:4px; overflow:hidden; margin:14px 0 6px; background:var(--line2)}
+.stack span{display:block; height:100%}
+.legend{display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; color:var(--ink2)}
+.legend i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px}
+.kpis{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:12px}
+.kpi{background:var(--surface2); border-radius:var(--radius-s); padding:7px 9px}
+.kpi .k{font-size:11.5px; color:var(--muted)}
+.kpi .v{font-family:"IBM Plex Mono",monospace; font-size:14px}
+.fit{margin-top:12px; font-size:12.5px}
+.fit table{width:100%; border-collapse:collapse}
+.fit td{padding:3px 2px; border-bottom:1px solid var(--line2)}
+.fit td.r{text-align:right; font-family:"IBM Plex Mono",monospace}
+.foot{font-size:11.5px; color:var(--muted); margin-top:8px}
+.btn{background:var(--fuel); color:#fff; border:none; border-radius:var(--radius-s); padding:7px 12px; cursor:pointer; font-weight:500}
+.btn.ghost{background:transparent; color:var(--ink2); border:1px solid var(--line)}
+.btn.small{padding:4px 9px; font-size:12px}
+.savedlist{display:flex; flex-direction:column; gap:6px; margin-top:10px}
+.saved{display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; font-size:12.5px; background:var(--surface2); border-radius:var(--radius-s); padding:6px 8px}
+.saved .tag{font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--fuel)}
+.saved .sz{font-family:"IBM Plex Mono",monospace; color:var(--ink2)}
+.cmpsel{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; align-items:center; margin-top:12px}
+.cmpsel select{min-width:0; width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:var(--radius-s); background:var(--surface2); color:var(--ink)}
+.st{font-size:11.5px; padding:1px 6px; border-radius:999px; white-space:nowrap}
+.st.add{background:var(--ok-soft); color:var(--ok)} .st.rem{background:var(--caution-soft); color:var(--caution)}
+.st.exp{background:var(--amber-soft); color:var(--amber)} .st.same{background:var(--surface2); color:var(--muted)}
+.refs{font-size:12px; color:var(--ink2); columns:2 380px; column-gap:28px}
+.refs p{margin:0 0 6px; break-inside:avoid}
+.anchor{border-bottom:1px solid var(--line2); padding:9px 0; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 14px}
+.anchor .nm{font-weight:500}
+.anchor .val{font-family:"IBM Plex Mono",monospace; color:var(--ink2); text-align:right}
+.anchor .cfgl{grid-column:1 / -1; font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink2)}
+.anchor .cfgl b{color:var(--fuel); font-weight:500}
+.anchor .an{grid-column:1 / -1; font-size:11.5px; color:var(--muted)}
+.anchor .model{grid-column:1 / -1; font-size:12px; background:var(--ok-soft); color:var(--ok); border-radius:var(--radius-s); padding:4px 8px}
+
+/* designer */
+#designer{display:none}
+#designer.show{display:block}
+.dtabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px}
+.dtabs button{border:1px solid var(--line); background:var(--surface2); border-radius:var(--radius-s); padding:5px 10px; cursor:pointer; font-size:12.5px}
+.dtabs button.on{border-color:var(--fuel); background:var(--fuel-soft)}
+.dscroll{overflow-x:auto}
+table.ptab{border-collapse:collapse; font-size:12px; min-width:1100px}
+table.ptab th, table.ptab td{border-bottom:1px solid var(--line2); padding:3px 4px; vertical-align:top}
+table.ptab th{color:var(--muted); font-weight:500; text-align:left}
+table.ptab input{width:64px; padding:3px 5px; border:1px solid var(--line); border-radius:4px; background:var(--surface2)}
+table.ptab input.w{width:180px} table.ptab input.k{width:90px; font-family:"IBM Plex Mono",monospace}
+textarea.code{width:100%; min-height:90px; font-family:"IBM Plex Mono",monospace; font-size:12px; padding:8px; border:1px solid var(--line); border-radius:var(--radius-s); background:var(--surface2); color:var(--ink)}
+.rulecard{border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px}
+.rulecard .rgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px}
+.rulecard label{display:block; font-size:11.5px; color:var(--muted)}
+.rulecard input{width:100%; padding:4px 6px; border:1px solid var(--line); border-radius:4px; background:var(--surface2); font-family:"IBM Plex Mono",monospace; font-size:12px}
+.rulecard .rh{display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap}
+.rulecard .rh b{font-family:"IBM Plex Mono",monospace}
+.err{color:var(--caution); font-size:12px}
+.okmsg{color:var(--ok); font-size:12px}
+.varlist{font-size:12px; columns:2 300px; column-gap:24px}
+.varlist div{break-inside:avoid; margin-bottom:3px}
+.varlist code{color:var(--fuel)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>PortFIT <span style="font-weight:400; color:var(--ink2)">· Port Footprint and Infrastructure planning Tool for hydrogen and e-fuels</span></h1>
+    <p>Describe a port and its future fuel demand, choose how each fuel reaches the port and where it goes, and see the facilities this requires and the land they take — inside the port fence, in safety zones, and for renewable power outside the fence.</p>
+    <p class="howto"><b>How to use:</b> start in <a href="#m1">Module 1 Port context</a>, work through Modules 1–4, and read the results in <a href="#m5">Module 5 Land by system boundary</a>. <a href="#m0">Module 0 Overview</a> summarises your inputs and results.</p>
+  </div>
+  <div class="hdrbtns">
+    <span class="badge-demo">Version 1.0-beta · November 2026</span>
+    <div style="display:flex; gap:6px">
+      <button class="pill" id="designerBtn" type="button" aria-pressed="false" hidden>Designer mode</button>
+      <button class="pill" id="themeBtn" type="button">Light / dark</button>
+    </div>
+  </div>
+</header>
+
+<div class="beta" role="note"><div class="box"><b>Beta version for testing.</b> PortFIT is a screening tool: many parameters are placeholders and safety distances are illustrative, so do not use the results for permitting or investment decisions. Please work through the <a href="#tasks">tester tasks</a> and <a href="#feedback">send your feedback</a>.</div></div>
+
+<div class="wrap">
+
+<section class="panel" id="m0">
+  <div class="hd"><span class="n">0</span><h2>Overview</h2></div>
+  <p class="lead">An overview of your inputs and results. Enter the inputs in Modules 1–4, starting with Module 1 Port context; the full results are in Module 5.</p>
+  <div class="bd">
+    <nav class="steps" aria-label="Modules">
+      <a href="#m1"><b>1</b>Port context</a><a href="#m2"><b>2</b>Fuel demand</a><a href="#m3"><b>3</b>Configuration</a>
+      <a href="#m4"><b>4</b>Infrastructure requirements</a><a href="#m5"><b>5</b>Land by system boundary</a><a href="#m6"><b>6</b>Configuration change</a>
+      <a href="#refs">References</a><a href="#reality">Reality check</a><a href="#tasks">Tester tasks</a><a href="#feedback">Feedback</a><a href="#about">About</a>
+    </nav>
+    <div class="ovgrid">
+      <div>
+        <div id="ovChains"></div>
+        <div class="legendrow">
+          <span><span class="chip on" style="--fc:var(--slate)">SRC.1</span> solid: main option for this fuel</span>
+          <span><span class="chip on niche" style="--fc:var(--slate)">SRC.4</span> dashed: niche or pilot option</span>
+          <span><span class="chip">—</span> no option active in this function</span>
+          <span><span class="mono" style="font-size:11px">60%</span> share of the fuel’s flow</span>
+        </div>
+      </div>
+      <div class="kres" id="ovResults"></div>
+    </div>
+  </div>
+</section>
+
+<div class="layout">
+<div>
+
+  <section class="panel" id="m1">
+    <div class="hd"><span class="n">1</span><h2>Port context</h2></div>
+    <p class="lead">Name the port and describe its land. Required land is compared with the land that could host new energy facilities.</p>
+    <div class="bd">
+      <div class="grid2">
+        <div class="field"><label for="portName">Port name</label><input type="text" id="portName"></div>
+        <div class="field"><label for="portLoc">Location</label><input type="text" id="portLoc" placeholder="City, country"><div class="hint">Optional coordinates below</div></div>
+        <div class="field"><label for="portLat">Latitude</label><input type="number" id="portLat" step="0.0001" placeholder="e.g. 57.69"></div>
+        <div class="field"><label for="portLon">Longitude</label><input type="number" id="portLon" step="0.0001" placeholder="e.g. 11.90"></div>
+      </div>
+      <div class="subh">Port land for reference (ha)</div>
+      <div class="grid2">
+        <div class="field"><label for="landUsed">Currently used</label><input type="number" id="landUsed" min="0" step="10"><div class="hint">Operational terminals, industry, logistics</div></div>
+        <div class="field"><label for="landCommitted">In progress / committed development</label><input type="number" id="landCommitted" min="0" step="10"><div class="hint">Under construction or allocated to projects</div></div>
+        <div class="field"><label for="landPotential">Potential use</label><input type="number" id="landPotential" min="0" step="10"><div class="hint">Reserved, latent or strategic land bank</div></div>
+        <div class="field"><label for="resType">Renewable power (outside the fence)</label>
+          <select id="resType"><option value="off">Offshore wind</option><option value="on">Onshore wind</option><option value="pv">Solar PV</option></select>
+          <div class="hint">Sets the “+ renewables” land total</div></div>
+      </div>
+      <div class="landbar" id="landBar"></div>
+      <div class="legend" id="landLegend" style="margin-top:6px"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="m2">
+    <div class="hd"><span class="n">2</span><h2>Fuel demand</h2></div>
+    <p class="lead">Give the alternative-fuel demand the port must serve. Use shares of the port’s annual fuel use, or enter tonnes per year for each fuel directly.</p>
+    <div class="bd">
+      <div class="seg" id="demandMode" role="group" aria-label="Demand input mode">
+        <button type="button" data-mode="share">Shares of annual fuel use</button>
+        <button type="button" data-mode="direct">Annual demand per fuel (t/yr)</button>
+      </div>
+      <div id="demandInputs" style="margin-top:12px"></div>
+      <table class="tbl" id="demandTable"><thead><tr><th>Fuel</th><th class="r">t/yr</th><th class="r">PJ/yr</th><th class="r">Share of energy</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <section class="panel" id="m3">
+    <div class="hd"><span class="n">3</span><h2>Configuration</h2></div>
+    <p class="lead">For each fuel, start from a reference configuration and adjust the source mix, destination mix and in-port choices. Shares are normalised to 100%.</p>
+    <div class="bd">
+      <div class="ftabs" id="ftabs3"></div>
+      <div id="cfgBody"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="m4">
+    <div class="hd"><span class="n">4</span><h2>Infrastructure requirements</h2><span style="color:var(--muted); font-size:13px">facilities and sizing</span></div>
+    <p class="lead">Each active option becomes facilities. Open a row to see its equation and parameters; equation numbers (E1–E50) follow the sizing model in the design documentation. Each sizing box shows reference values for its parameters, taken from the sources listed under References; adjust them if you have more specific or accurate values for your port. Red figures are the safety zone around a facility; blue notes are water area.</p>
+    <div class="bd">
+      <div class="ftabs" id="ftabs4"></div>
+      <div class="opt" style="margin-bottom:6px"><h3>Electrolyser footprint basis</h3>
+        <div class="choice" id="elyChoice"></div>
+        <div class="note" style="margin-top:0">An electrolyser is sized only when the source includes on-site production (SRC.6); the other sources deliver hydrogen or its derivatives already made. Plant-level factors include the balance of plant (BoP): water supply and treatment, power conversion, cooling and compression. With “stack and building only”, water treatment land is added separately.</div>
+      </div>
+      <div class="flows" id="flows"></div>
+      <div id="facilities"></div>
+    </div>
+  </section>
+
+</div>
+
+<aside class="sticky">
+  <section class="panel" id="m5">
+    <div class="hd"><span class="n">5</span><h2>Land by system boundary</h2></div>
+    <p class="lead">All fuels together. Median and P10–P90 range from a seeded Monte Carlo over the parameter ranges.</p>
+    <div class="bd">
+      <div class="landrows" id="landrows"></div>
+      <div class="fit" id="fit"></div>
+      <div class="stack" id="stack"></div>
+      <div class="legend" id="legend"></div>
+      <div class="kpis" id="kpis"></div>
+      <table class="tbl" id="factable"><thead><tr><th>Facility</th><th class="r" title="Plot area of the facility itself">Land (ha)</th><th class="r" title="Safety zone around the facility beyond its own plot">Zone (ha)</th></tr></thead><tbody></tbody></table>
+      <div class="foot"><b>Land</b> is the facility’s own plot. <b>Zone</b> is the safety zone around it beyond that plot, π(r + R)² − A with r = √(A/π) and R the safety distance; it counts in the “+ safety zones” boundary only. On-site production (SRC.6) is the electrolyser plant inside the fence; SRC.1–5 are arrival modes and hold no land.</div>
+    </div>
+  </section>
+
+  <section class="panel" id="m6">
+    <div class="hd"><span class="n">6</span><h2>Configuration change</h2></div>
+    <p class="lead">Save configurations, then compare two to see which facilities are added, expanded, kept or stranded.</p>
+    <div class="bd">
+      <div style="display:flex; gap:8px"><button class="btn" id="saveBtn" type="button">Save this configuration</button><button class="btn ghost" id="clearBtn" type="button">Clear</button></div>
+      <div class="savedlist" id="savedList"></div>
+      <div id="cmpArea"></div>
+    </div>
+  </section>
+</aside>
+</div>
+
+<section class="panel" id="refs">
+  <div class="hd"><h2>References and data notes</h2></div>
+  <div class="bd refs" id="refsBody"></div>
+</section>
+
+<section class="panel" id="reality">
+  <div class="hd"><h2>Reality check</h2></div>
+  <p class="lead">Built or planned projects with their reported land, written as configurations. Where the demand is known, load the case into the model and compare.</p>
+  <div class="bd" id="anchors"></div>
+</section>
+
+<section class="panel" id="tasks">
+  <div class="hd"><h2>Tester tasks</h2><span style="color:var(--muted); font-size:13px">about 20 minutes</span></div>
+  <p class="lead">Three short tasks so that everyone tests the same things. Tick each one when done; your ticks are kept in this browser only.</p>
+  <div class="bd" id="taskList"></div>
+</section>
+
+<section class="panel fb" id="feedback">
+  <div class="hd"><h2>Feedback</h2></div>
+  <p class="lead">Your answers go to the developer only. You can send feedback more than once; the latest version replaces the earlier one.</p>
+  <div class="bd">
+    <div id="fbStatus" class="note" style="margin-top:0"></div>
+    <div class="q">Your role</div>
+    <select id="fbRole"><option value="">Choose…</option><option>Port authority or port planner</option><option>Researcher</option><option>Consultant or engineer</option><option>Energy or fuel company</option><option>Student</option><option>Other</option></select>
+    <div class="q">Could you complete the tasks?</div>
+    <div id="fbTasks"></div>
+    <div class="q">What was unclear or hard to find?</div>
+    <textarea id="fbUnclear" placeholder="Modules, terms, results or steps that confused you"></textarea>
+    <div class="q">Do the results look plausible for ports you know?</div>
+    <div class="radios" id="fbPlaus"></div>
+    <textarea id="fbPlausWhy" placeholder="Which results, and why?" style="margin-top:6px"></textarea>
+    <div class="q">Which options, facilities or data are missing?</div>
+    <textarea id="fbMissing" placeholder="For example a source, a facility type, a parameter you would expect"></textarea>
+    <div class="q">Usability</div>
+    <div class="sub">System Usability Scale: 1 = strongly disagree, 5 = strongly agree.</div>
+    <div style="overflow-x:auto"><table class="likert" id="fbSus"></table></div>
+    <div class="q">Anything else?</div>
+    <textarea id="fbOther"></textarea>
+    <label style="display:flex; gap:6px; align-items:center; margin-top:10px; font-size:13px"><input type="checkbox" id="fbAttach" checked> Attach my current configuration and results, so the developer can reproduce what I saw</label>
+    <div style="margin-top:12px"><button class="btn" id="fbSend" type="button">Send feedback</button></div>
+    <div class="fbmsg" id="fbMsg" role="status"></div>
+    <div id="fbResponses"></div>
+  </div>
+</section>
+
+<section class="panel" id="about">
+  <div class="hd"><h2>About PortFIT</h2></div>
+  <div class="bd about"><p style="margin:0 0 6px"><b>Version 1.0-beta, November 2026.</b> Developed by Xiaohui Li, Chalmers University of Technology.</p>
+  <p style="margin:0">Acknowledgement: developed with support from the Port as Energy Transition Hubs (POTENT-X) project, <a href="https://potent-x.eu/" target="_blank" rel="noopener">https://potent-x.eu/</a>.</p></div>
+</section>
+
+<section class="panel" id="designer">
+  <div class="hd"><h2>Designer mode</h2><span style="color:var(--muted); font-size:13px">edit parameters and sizing equations</span></div>
+  <p class="lead">Changes apply to this browser and are kept between visits. Export the model as JSON to share it or to move it into the source file.</p>
+  <div class="bd">
+    <div class="dtabs" id="dtabs"></div>
+    <div id="dbody"></div>
+    <div id="dmsg" style="margin-top:8px"></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* =====================================================================
+   1. FRAMEWORK DATA (Supply_chain_dynamics_mapped_with_fuel_cleaned.xlsx)
+   Ratings per fuel [H2, MeOH, NH3]: 2 main · 1 niche or pilot · 0 not applicable
+   ===================================================================== */
+const FUELS = {
+  H2:  {name:'Hydrogen',   sym:'H₂',   color:'#2f6fb5', lhv:120,  h2:1.0,   co2:0,    n2:0,     dens:70.8, note:'Gaseous by pipeline; liquid (LH₂) or LOHC by ship and truck'},
+  MeOH:{name:'e-Methanol', sym:'MeOH', color:'#2e8b57', lhv:19.9, h2:0.19,  co2:1.38, n2:0,     dens:792,  note:'Liquid at ambient conditions'},
+  NH3: {name:'e-Ammonia',  sym:'NH₃',  color:'#8e44ad', lhv:18.6, h2:0.178, co2:0,    n2:0.822, dens:682,  note:'Refrigerated or pressurised liquid'}
+};
+const FKEYS = ['H2','MeOH','NH3'];
+const FI = {H2:0, MeOH:1, NH3:2};
+const R = {
+ 'SRC.1':[1,2,2],'SRC.2':[1,2,2],'SRC.3':[0,2,1],'SRC.4':[2,1,1],'SRC.5':[1,2,1],'SRC.6':[2,1,2],
+ 'FEED.PWR':[2,2,2],'FEED.H2O':[2,2,2],'FEED.N2':[0,0,2],'FEED.CO2':[0,2,0],
+ 'IN.1':[1,2,2],'IN.2a':[2,1,1],'IN.2b':[1,2,1],'IN.3':[2,1,2],'IN.F':[2,2,2],'direct':[1,2,1],
+ 'CNV.0':[2,2,2],'CNV.1':[0,2,2],'CNV.2':[2,0,0],'CNV.3':[2,1,2],
+ 'STO.0':[1,2,1],'STO.1':[1,2,2],'STO.2':[0,2,1],'STO.F':[0,2,1],
+ 'OUT.1':[1,2,2],'OUT.2a':[0,2,1],'OUT.2b':[2,2,1],'OUT.2c':[1,1,1],'OUT.2d':[1,0,0],'OUT.3':[2,2,2],
+ 'SNK.1':[1,2,2],'SNK.2':[1,2,2],'SNK.3':[1,2,2],'SNK.4':[1,2,1],'SNK.5':[2,2,2],'SNK.6':[2,1,1],
+ 'RET.LOHC':[2,0,0],'RET.BOG':[2,0,2],'RET.VAP':[2,1,2]
+};
+const rate = (code, f) => (R[code] || [2,2,2])[FI[f]];
+const DOT = r => `<i class="dot d${r}" aria-hidden="true"></i>`;
+const DOTTXT = r => r===2 ? 'main' : r===1 ? 'niche or pilot' : 'not applicable';
+
+const SRC = [
+ {c:'SRC.1', n:'Deep-sea',                       role:'Import gateway'},
+ {c:'SRC.2', n:'Short-sea',                      role:'Short-sea / feeder receiver'},
+ {c:'SRC.3', n:'Inland barge',                   role:'Inland-waterway-fed node'},
+ {c:'SRC.4', n:'Pipeline',                       role:'Pipeline-fed node'},
+ {c:'SRC.5', n:'Overland tanker (rail / road)',  role:'Rail / road-fed node'},
+ {c:'SRC.6', n:'On-site production',             role:'Production site'}
+];
+const SNK = [
+ {c:'SNK.1', n:'Export',             role:'Export hub'},
+ {c:'SNK.2', n:'Re-export',          role:'Re-export hub'},
+ {c:'SNK.3', n:'Coastwise transfer', role:'Transfer node'},
+ {c:'SNK.4', n:'Bunkering',          role:'Bunkering hub'},
+ {c:'SNK.5', n:'Hinterland',         role:'Hinterland gateway'},
+ {c:'SNK.6', n:'Local use',          role:'Local cluster supplier'}
+];
+const FNS = [['SRC','Source'],['FEED','Feedstock'],['TRF-IN','Inbound'],['CNV','Conversion'],['STO','Storage'],['TRF-OUT','Outbound'],['SNK','Destination'],['RET','Return']];
+const GROUPS = [['SRC','SRC.6 On-site production','electrolyser plant incl. balance of plant'],['FEED','Feedstock','power, water, CO₂'],
+  ['TRF-IN','Inbound transfer','driven by the source mix'],['CNV','Conversion','state changes here'],['STO','Storage','buffers between arrivals and dispatch'],
+  ['TRF-OUT','Outbound transfer','driven by destination shares'],['RET','Return flows','boil-off, vapour, empty carrier']];
+const FNCOL = {SRC:'#2f6fb5', FEED:'#5b8c9b', 'TRF-IN':'#7a8f3a', CNV:'#a86a12', STO:'#34506f', 'TRF-OUT':'#8e44ad', RET:'#9a7a6a'};
+
+/* Reference configurations (atlas panels c–d; evidence in Supply_chain_compositions_by_fuel.xlsx) */
+const PRESETS = {
+ H2:[
+  {code:'H1', ev:'Dominant', d:'On-site production → hinterland and local industry', src:{'SRC.6':1}, snk:{'SNK.5':.7,'SNK.6':.3}, sto:'STO.1', disp:'pipe'},
+  {code:'H2', ev:'Emerging (regional)', d:'Pipeline-fed node → hinterland (backbone transit)', src:{'SRC.4':1}, snk:{'SNK.5':1}, sto:'STO.1', disp:'pipe'},
+  {code:'H4', ev:'Niche (ferry scale)', d:'Overland LH₂ tanker → truck-to-ship bunkering', src:{'SRC.5':1}, snk:{'SNK.4':1}, sto:'STO.0', bunk:'OUT.2b', carrier:'LH2', railIn:0},
+  {code:'H5', ev:'Pilot', d:'On-site production + liquefaction → export', src:{'SRC.6':1}, snk:{'SNK.1':1}, sto:'STO.1', carrier:'LH2'},
+  {code:'H5i', ev:'Pilot', d:'LH₂ import → regasification → hinterland', src:{'SRC.1':1}, snk:{'SNK.5':1}, sto:'STO.1', carrier:'LH2', disp:'pipe'}
+ ],
+ MeOH:[
+  {code:'M1', ev:'Dominant', d:'Import gateway → ship-to-ship bunkering', src:{'SRC.1':1}, snk:{'SNK.4':1}, sto:'STO.2', bunk:'OUT.2a'},
+  {code:'M2', ev:'Major in China', d:'Overland tanker → coastwise transfer', src:{'SRC.5':1}, snk:{'SNK.3':1}, sto:'STO.1', railIn:.3},
+  {code:'M3', ev:'Existing stock', d:'Import gateway → hinterland', src:{'SRC.1':1}, snk:{'SNK.5':1}, sto:'STO.1', disp:'rail'},
+  {code:'M4', ev:'Niche', d:'Road tanker → truck-to-ship bunkering (no storage)', src:{'SRC.5':1}, snk:{'SNK.4':1}, sto:'STO.0', bunk:'OUT.2b', railIn:0},
+  {code:'M5', ev:'Alternative', d:'On-site production → pipeline-to-ship bunkering', src:{'SRC.6':1}, snk:{'SNK.4':1}, sto:'STO.1', bunk:'OUT.2c', co2:'import'}
+ ],
+ NH3:[
+  {code:'A1', ev:'Dominant in pipeline', d:'On-site production → export', src:{'SRC.6':1}, snk:{'SNK.1':1}, sto:'STO.1'},
+  {code:'A2', ev:'Dominant in existing stock', d:'Import gateway → hinterland and local cluster', src:{'SRC.1':1}, snk:{'SNK.5':.6,'SNK.6':.4}, sto:'STO.1', disp:'rail', crack:0},
+  {code:'A3', ev:'Alternative, rising', d:'Import + cracking → hydrogen to the hinterland (= H3)', src:{'SRC.1':1}, snk:{'SNK.5':1}, sto:'STO.1', disp:'pipe', crack:1},
+  {code:'A4', ev:'Niche (China)', d:'Rail tanker → export', src:{'SRC.5':1}, snk:{'SNK.1':1}, sto:'STO.1', railIn:1},
+  {code:'A5', ev:'Emerging', d:'Import gateway → ship-to-ship bunkering', src:{'SRC.1':1}, snk:{'SNK.4':1}, sto:'STO.1', bunk:'OUT.2a'}
+ ]
+};
+
+/* =====================================================================
+   2. DEFAULT MODEL — parameters, common definitions, facility rules, totals
+   Values are [central, low, high]. Edit here or in Designer mode.
+   ===================================================================== */
+const DEFAULT_PARAMS = {
+ eEl:{t:'Electrolysis electricity', u:'MWh/t H₂', all:[52,50,55], step:.5, src:'IRENA (2020); PEM 50–55 kWh/kg'},
+ cf:{t:'Electrolyser capacity factor', u:'–', all:[.55,.35,.95], step:.01, src:'Project assumption'},
+ elyF:{t:'Electrolyser footprint', u:'m²/MW', all:[105,80,130], step:1, src:'Set by the footprint basis: PEM plant 80–130, alkaline plant 100–170, stack and building 12–22 (ISPT 2020 via IRENA 2020)'},
+ wH2:{t:'Water per t H₂', u:'m³/t', all:[15,9,26], step:.5, src:'9 stoichiometric; 25.7 with treatment (IRENA & Bluerisk 2023)'},
+ desalF:{t:'Water treatment footprint', u:'m² per m³/yr', all:[.001,.0007,.0015], step:.0001, src:'Einav et al. (2002), desalination', gap:true},
+ subF:{t:'Substation footprint', u:'m²/MW', all:[10,5,15], step:1, src:'Placeholder', gap:true},
+ synF:{t:'Synthesis plot', u:'m² per t/h', byFuel:{H2:[0,0,0], MeOH:[295,250,340], NH3:[550,400,700]}, step:5, src:'MeOH: TNO/SmartPort (2020); NH₃ incl. ASU: placeholder', gap:true},
+ eSyn:{t:'Synthesis electricity', u:'MWh/t fuel', byFuel:{H2:[0,0,0], MeOH:[.3,.2,.5], NH3:[.7,.5,.9]}, step:.05, src:'NH₃: IRENA & AEA (2022) totals minus electrolysis; MeOH placeholder', gap:true},
+ dacF:{t:'DAC footprint', u:'m² per t CO₂/yr', all:[.4,.1,1.0], step:.05, src:'Viebahn et al. (2019) 0.1; WRI 0.4–0.5; Port of Vancouver ≈ 1.0'},
+ eDac:{t:'DAC electricity', u:'MWh/t CO₂', all:[2.2,1.8,2.6], step:.1, src:'IEA (2022): 6.6–9.5 GJ/t CO₂'},
+ pscF:{t:'Point-source capture footprint', u:'m² per t CO₂/yr', all:[.04,.02,.08], step:.01, src:'Placeholder', gap:true},
+ ePsc:{t:'Point-source capture electricity', u:'MWh/t CO₂', all:[.2,.1,.35], step:.05, src:'Placeholder (heat not counted)', gap:true},
+ co2Days:{t:'LCO₂ buffer', u:'days', all:[7,3,15], step:1, src:'Placeholder', gap:true},
+ lco2Fix:{t:'LCO₂ unloading point', u:'ha', all:[.5,.3,.8], step:.05, src:'Placeholder', gap:true},
+ liqF:{t:'Liquefier plot', u:'m² per t H₂/h', all:[300,150,450], step:5, src:'Placeholder', gap:true},
+ eLiq:{t:'Liquefaction electricity', u:'MWh/t H₂', all:[11.5,10,13], step:.1, src:'10–13 kWh/kg (Zhang et al. 2023)'},
+ lohcF:{t:'LOHC hydrogenation plot', u:'m² per t H₂/h', all:[200,100,300], step:5, src:'Placeholder', gap:true},
+ eLohc:{t:'LOHC hydrogenation electricity', u:'MWh/t H₂', all:[.7,.3,1.2], step:.05, src:'Placeholder', gap:true},
+ crackF:{t:'Cracker footprint incl. storage', u:'m² per t H₂/yr', all:[.32,.20,.45], step:.01, src:'Fluor for Port of Rotterdam (2023): 20–45 ha per Mt H₂/yr'},
+ crackY:{t:'Cracking yield', u:'–', all:[.85,.8,.9], step:.01, src:'Assumption', gap:true},
+ regasF:{t:'Regasification / dehydrogenation plot', u:'m² per t H₂/yr', all:[.1,.03,.3], step:.01, src:'Placeholder', gap:true},
+ cover:{t:'Cover', u:'days of throughput', all:[15,3,60], step:1, src:'Terminal practice'},
+ tankD:{t:'Tank diameter', u:'m', byFuel:{H2:[25,15,35], MeOH:[40,25,60], NH3:[50,35,70]}, step:1, src:'Vendor and DNV (2022) ranges'},
+ tankH:{t:'Tank height', u:'m', byFuel:{H2:[20,15,25], MeOH:[22,15,30], NH3:[30,20,40]}, step:1, src:'Vendor ranges'},
+ fill:{t:'Usable fill fraction', u:'–', all:[.9,.85,.95], step:.01, src:'Assumption', gap:true},
+ pitch:{t:'Tank pitch incl. spacing and bunds', u:'× D', all:[1.8,1.6,2.6], step:.05, src:'NFPA 30 spacing; HSE HSG176 bunds'},
+ lohcDens:{t:'H₂ held per m³ LOHC', u:'kg/m³', all:[55,50,60], step:1, src:'≈ 6 wt% loading; placeholder', gap:true},
+ gBufH:{t:'Gas buffer', u:'hours', all:[8,2,24], step:1, src:'Placeholder', gap:true},
+ gBufF:{t:'Gas buffer footprint', u:'m² per t H₂', all:[650,400,900], step:10, src:'Placeholder', gap:true},
+ stemsHeld:{t:'Staging tier holds', u:'stems', all:[2,1,3], step:.5, src:'Assumption', gap:true},
+ fsuV:{t:'Floating storage unit', u:'m³', all:[20000,5000,40000], step:1000, src:'Bunker vessel / FSU sizes'},
+ bor:{t:'Boil-off rate', u:'% per day', byFuel:{H2:[.1,.05,.2], MeOH:[0,0,0], NH3:[.03,.02,.05]}, step:.01, src:'LH₂ spheres < 0.1%/day (Zhang et al. 2023); NH₃ typical'},
+ bogFix:{t:'Boil-off handling plot', u:'ha', all:[.2,.1,.4], step:.05, src:'Placeholder', gap:true},
+ parcel:{t:'Deep-sea parcel', u:'t', byFuel:{H2:[2800,500,5600], MeOH:[20000,10000,40000], NH3:[25000,15000,50000]}, step:100, src:'Carrier sizes; LH₂ from 40,000 m³ design'},
+ parcelS:{t:'Short-sea parcel', u:'t', byFuel:{H2:[300,75,1000], MeOH:[5000,2000,10000], NH3:[4000,2000,8000]}, step:50, src:'Coastal chemical tankers and small gas carriers (3,000–15,000 dwt)', gap:true},
+ qShort:{t:'Short-sea transfer rate', u:'t/h', byFuel:{H2:[100,50,200], MeOH:[800,400,1500], NH3:[600,300,1000]}, step:10, src:'Placeholder', gap:true},
+ berthLandS:{t:'Short-sea berth: landside area', u:'ha', all:[.5,.3,.8], step:.05, src:'Placeholder', gap:true},
+ loaS:{t:'Short-sea design vessel length (LOA)', u:'m', all:[120,90,150], step:1, src:'Typical coastal tankers', gap:true},
+ parcelB:{t:'Inland barge parcel', u:'t', byFuel:{H2:[0,0,0], MeOH:[2000,1000,3000], NH3:[1000,500,2000]}, step:50, src:'Rhine tank barges (CEMT Va–VIb); NH₃ barges are pressurised and small', gap:true},
+ qBarge:{t:'Barge transfer rate', u:'t/h', byFuel:{H2:[0,0,0], MeOH:[400,200,800], NH3:[250,100,500]}, step:10, src:'Placeholder', gap:true},
+ tMoorB:{t:'Barge mooring and hook-up time', u:'h per call', all:[3,2,5], step:.5, src:'Assumption', gap:true},
+ berthLandB:{t:'Barge berth: landside area', u:'ha', all:[.25,.1,.4], step:.05, src:'Placeholder', gap:true},
+ loaB:{t:'Barge length (LOA)', u:'m', all:[110,85,135], step:1, src:'CEMT classes Va–VIb'},
+ loaD:{t:'Deep-sea design vessel length (LOA)', u:'m', byFuel:{H2:[220,180,300], MeOH:[183,150,230], NH3:[205,180,230]}, step:1, src:'MR tanker ≈ 183 m; gas carriers 180–230 m; LH₂ carrier placeholder', gap:true},
+ berthLenF:{t:'Berth length factor', u:'× LOA', all:[1.15,1.1,1.2], step:.01, src:'Rule of thumb (Ligteringen 2017; Thoresen 2018), not yet checked against the originals', gap:true},
+ qShip:{t:'Deep-sea transfer rate', u:'t/h', byFuel:{H2:[200,50,500], MeOH:[1500,800,3000], NH3:[1000,500,2000]}, step:10, src:'Terminal practice', gap:true},
+ tMoor:{t:'Mooring and hook-up time', u:'h per call', all:[6,4,10], step:.5, src:'Port planning practice'},
+ occ:{t:'Berth occupancy', u:'–', all:[.5,.4,.7], step:.05, src:'TU Delft Ports & Waterways: ≈ 40% single berth'},
+ berthLand:{t:'Deep-sea berth: landside area', u:'ha', all:[.8,.5,1.5], step:.05, src:'Placeholder (trestle root, topsides, access)', gap:true},
+ stem:{t:'Stem size', u:'t per operation', byFuel:{H2:[4,2,10], MeOH:[1000,300,4000], NH3:[800,300,3000]}, step:1, src:'Observed: MeOH 3,600–8,000 t (Shanghai); NH₃ 600–1,000 t (Ulsan, Zhoushan); LH₂ 4 t (MF Hydra)'},
+ qBunk:{t:'Bunkering rate', u:'t/h', byFuel:{H2:[5,2,10], MeOH:[300,100,800], NH3:[200,100,500]}, step:5, src:'Placeholder', gap:true},
+ tLoadBV:{t:'Bunker vessel loading', u:'h', all:[8,4,12], step:.5, src:'Assumption', gap:true},
+ tSail:{t:'Sailing per round trip', u:'h', all:[3,1,6], step:.5, src:'Assumption', gap:true},
+ uBV:{t:'Bunker vessel utilisation', u:'–', all:[.6,.4,.8], step:.05, src:'Assumption', gap:true},
+ bargeLand:{t:'Bunker-barge loading berth', u:'ha', all:[.4,.2,.6], step:.05, src:'Placeholder', gap:true},
+ ttsLand:{t:'Truck-to-ship quay spot', u:'ha', all:[.1,.05,.2], step:.01, src:'Placeholder', gap:true},
+ ptsLand:{t:'Bunkering manifold at berth', u:'ha', all:[.1,.05,.2], step:.01, src:'Placeholder', gap:true},
+ contT:{t:'Fuel per container', u:'t', byFuel:{H2:[.5,.3,1], MeOH:[20,18,22], NH3:[15,12,18]}, step:.1, src:'ISO tank containers', gap:true},
+ slotA:{t:'Yard area per container', u:'m²', all:[30,20,40], step:1, src:'Placeholder', gap:true},
+ dwell:{t:'Container dwell', u:'days', all:[3,1,7], step:.5, src:'Placeholder', gap:true},
+ truckT:{t:'Road tanker capacity', u:'t', byFuel:{H2:[3.5,3,4], MeOH:[25,22,28], NH3:[22,18,25]}, step:.5, src:'LH₂ trailers 3–4 t; liquid tankers 20–25 t'},
+ tTruck:{t:'Truck turnaround at bay', u:'h', all:[1.5,1,2], step:.1, src:'Assumption', gap:true},
+ hOp:{t:'Operating hours', u:'h/day', all:[16,12,24], step:1, src:'Assumption'},
+ uBay:{t:'Bay utilisation', u:'–', all:[.7,.5,.85], step:.05, src:'Assumption'},
+ bayA:{t:'Area per bay incl. queuing', u:'m²', all:[600,400,900], step:10, src:'Placeholder', gap:true},
+ wagonT:{t:'Rail wagon capacity', u:'t', byFuel:{H2:[0,0,0], MeOH:[60,50,70], NH3:[50,40,60]}, step:1, src:'Rail tank-car ranges'},
+ nWag:{t:'Wagons per train', u:'–', all:[30,20,40], step:1, src:'Assumption'},
+ tTrain:{t:'Train unloading time', u:'h', all:[8,6,12], step:.5, src:'Assumption', gap:true},
+ sidW:{t:'Siding corridor width', u:'m', all:[20,15,30], step:1, src:'Placeholder', gap:true},
+ pipeSt:{t:'Pipeline station plot', u:'ha', all:[.4,.2,.6], step:.05, src:'Placeholder', gap:true},
+ pipeL:{t:'Internal pipe length', u:'km', all:[1.5,.5,3], step:.1, src:'Site-specific'},
+ pipeW:{t:'Pipe corridor width', u:'m', all:[8,5,12], step:.5, src:'Placeholder', gap:true},
+ vapFix:{t:'Vapour return / recovery plot', u:'ha', all:[.1,.05,.2], step:.01, src:'Placeholder', gap:true},
+ layout:{t:'Roads, utilities and control buildings', u:'× land', all:[1.25,1.15,1.35], step:.01, src:'Placeholder', gap:true},
+ safR:{t:'Storage safety distance', u:'m', byFuel:{H2:[150,100,200], MeOH:[50,30,80], NH3:[250,200,300]}, step:5, src:'Illustrative; NH₃ ≈ 20–25 ha zone around ≈ 3–4 ha of tanks. Replace with QRA or national rules', gap:true},
+ crackR:{t:'Cracker safety distance', u:'m', all:[150,100,250], step:5, src:'Illustrative', gap:true},
+ xferR:{t:'Bunkering transfer zone', u:'m', byFuel:{H2:[50,25,75], MeOH:[35,25,50], NH3:[100,50,150]}, step:5, src:'Port of Amsterdam & DNV: comparable to LNG except pressurised NH₃', gap:true},
+ resDens:{t:'Renewable power density', u:'MW/km²', byType:{off:[5,4,6], on:[3,2,5], pv:[50,40,65]}, step:.5, src:'Offshore 4–6 (TNO); onshore ≈ 3 (NREL); PV 40–65'},
+ resCF:{t:'Renewable capacity factor', u:'–', byType:{off:[.45,.4,.5], on:[.3,.25,.35], pv:[.15,.11,.2]}, step:.01, src:'Typical ranges'}
+};
+
+const DEFAULT_COMMON = `# Evaluated for every fuel before the facility rules. One "name = expression" per line.
+# E22–E23: calls and berth hours per class (deep-sea D, short-sea S, inland barge B); E14: storage volume; E31: bunkering operations
+dens = if(fuelH2, if(carrierLH2, 70.8, lohcDens), if(fuelMeOH, 792, 682))
+callsInD = MinDeep / parcel
+hrsInD = callsInD * (parcel / qShip + tMoor)
+callsInS = MinShort / parcelS
+hrsInS = callsInS * (parcelS / qShort + tMoor)
+callsInB = MinBarge / parcelB
+hrsInB = callsInB * (parcelB / qBarge + tMoorB)
+callsOutD = MoutDeep / parcel
+hrsOutD = callsOutD * (parcel / qShip + tMoor)
+callsOutS = MoutShort / parcelS
+hrsOutS = callsOutS * (parcelS / qShort + tMoor)
+hrsIn = hrsInD + hrsInS + hrsInB
+hrsOut = hrsOutD + hrsOutS
+Pin = max(if(MinDeep > 0, parcel, 0), if(MinShort > 0, parcelS, 0), if(MinBarge > 0, parcelB, 0))
+Pout = max(if(MoutDeep > 0, parcel, 0), if(MoutShort > 0, parcelS, 0), if(Mbunk > 0, stem, 0))
+Vsto = (max(Pin, Pout) + D * cover / 365) * 1000 / dens / fill
+inv = Vsto * dens * fill / 1000
+ops = if(Mbunk > 0, Mbunk / stem, 0)
+marine = hrsIn > 0 || hrsOut > 0 || (Mbunk > 0 && !isSwap)`;
+
+const DEFAULT_TOTALS = `# Evaluated per fuel after all facility rules. landSum, zoneSum and elecSum are the rule totals (E11 = elecSum).
+# E36, E50: fence; E21 summed: zones; E12: outside
+fence = landSum * layout
+zones = zoneSum
+resMW = elecSum / (8760 * resCF)
+outside = if(elecSum > 0, resMW / resDens * 1000000, 0)`;
+
+const R_ = (o) => Object.assign({defs:'', land:'0', zone:'0', elec:'0', cap:'', water:'', eq:'', keys:'', note:''}, o);
+const DEFAULT_RULES = [
+ R_({id:'ely', fn:'SRC', code:'SRC.6', name:'Electrolyser plant (incl. BoP)', when:'MH2 > 0', defs:'MW = MH2 * eEl / (8760 * cf)', land:'MW * elyF', elec:'MH2 * eEl',
+     cap:'{MW:0} MW · {MH2:0} t H₂/yr', eq:'E4–E6  MW = M_H₂ × e_el / (8760 × CF)\nA = MW × a_el   (plant level includes the balance of plant)', keys:'eEl, cf, elyF'}),
+ R_({id:'water', fn:'FEED', code:'FEED.H2O', name:'Water supply and treatment', when:'MH2 > 0', defs:'W = MH2 * wH2', land:'if(elyPlant, 0, W * desalF)',
+     cap:'{W:0} m³/yr', eq:'E7  W = M_H₂ × w\nA = 0 with a plant-level electrolyser footprint (part of its BoP); otherwise A = W × a_water', keys:'wH2, desalF',
+     note:'Included in the electrolyser plant’s balance of plant (BoP)'}),
+ R_({id:'synMeOH', fn:'CNV', code:'CNV.1', name:'Methanol synthesis and distillation', when:'fuelMeOH && Mprod > 0', defs:'thr = Mprod / 8760', land:'thr * synF', elec:'Mprod * eSyn',
+     cap:'{Mprod:0} t/yr · {thr:1} t/h', eq:'E9, E13  A = (M_fuel / 8760) × a_syn', keys:'synF, eSyn'}),
+ R_({id:'synNH3', fn:'CNV', code:'CNV.1', name:'Haber–Bosch loop + air separation (N₂)', when:'fuelNH3 && Mprod > 0', defs:'thr = Mprod / 8760', land:'thr * synF', elec:'Mprod * eSyn',
+     cap:'{Mprod:0} t/yr · {thr:1} t/h · N₂ {Mn2:0} t/yr', eq:'E8, E13  A = (M_fuel / 8760) × a_syn   (air separation included)', keys:'synF, eSyn'}),
+ R_({id:'dac', fn:'FEED', code:'FEED.CO2', name:'Direct air capture', when:'Mco2 > 0 && co2DAC', land:'Mco2 * dacF', elec:'Mco2 * eDac',
+     cap:'{Mco2:0} t CO₂/yr', eq:'E9, E10  M_CO₂ = M_fuel × c_CO₂\nA = M_CO₂ × a_DAC', keys:'dacF, eDac'}),
+ R_({id:'psc', fn:'FEED', code:'FEED.CO2', name:'Point-source CO₂ capture', when:'Mco2 > 0 && co2Point', land:'Mco2 * pscF', elec:'Mco2 * ePsc',
+     cap:'{Mco2:0} t CO₂/yr', eq:'E9, E10  A = M_CO₂ × a_capture', keys:'pscF, ePsc'}),
+ R_({id:'lco2', fn:'TRF-IN', code:'IN.F', name:'LCO₂ receiving and buffer tanks', when:'Mco2 > 0 && co2Import',
+     defs:'Vc = Mco2 * co2Days / 365 / 1.1 / fill\nNc = max(1, ceil(Vc / (pi / 4 * 15 ^ 2 * 20)))', land:'lco2Fix * 10000 + Nc * (1.8 * 15) ^ 2',
+     cap:'{Mco2:0} t CO₂/yr · {Nc:0} × Ø15 m tanks', eq:'E39  V = M_CO₂ × days / 365 / ρ_LCO₂\nA = A_unloading + N × (1.8 D)²', keys:'co2Days, lco2Fix'}),
+ R_({id:'pipe3', fn:'TRF-IN', code:'IN.3', name:'Internal pipe corridor', when:'Mprod > 0', land:'pipeL * 1000 * pipeW', cap:'{pipeL:1} km', eq:'E42  A = length × corridor width', keys:'pipeL, pipeW'}),
+ R_({id:'liq', fn:'CNV', code:'CNV.2', name:'Hydrogen liquefier', when:'conv2 > 0 && carrierLH2', land:'conv2 / 8760 * liqF', elec:'conv2 * eLiq',
+     cap:'{conv2:0} t H₂/yr', eq:'E11, E13  A = (M_conditioned / 8760) × a_liq\nE = M_conditioned × e_liq', keys:'liqF, eLiq'}),
+ R_({id:'lohcH', fn:'CNV', code:'CNV.2', name:'LOHC hydrogenation', when:'conv2 > 0 && carrierLOHC', land:'conv2 / 8760 * lohcF', elec:'conv2 * eLohc',
+     cap:'{conv2:0} t H₂/yr', eq:'E11, E13  A = (M_conditioned / 8760) × a_LOHC', keys:'lohcF, eLohc'}),
+ R_({id:'crack', fn:'CNV', code:'CNV.3', name:'Ammonia cracker', when:'fuelNH3 && conv3 > 0', defs:'H2out = conv3 * 0.176 * crackY\nAc = H2out * crackF',
+     land:'Ac', zone:'pi * (sqrt(Ac / pi) + crackR) ^ 2 - Ac', cap:'{conv3:0} t NH₃/yr → {H2out:0} t H₂/yr',
+     eq:'E38, E13, E21  M_H₂ = M_NH₃ × 0.176 × yield\nA = M_H₂ × a_crack;  zone = π(r + R)² − A', keys:'crackF, crackY, crackR'}),
+ R_({id:'regas', fn:'CNV', code:'CNV.3', name:'LH₂ regasification', when:'fuelH2 && conv3 > 0 && carrierLH2', land:'conv3 * regasF', cap:'{conv3:0} t H₂/yr', eq:'E13  A = M_H₂ × a_reconv', keys:'regasF'}),
+ R_({id:'dehyd', fn:'CNV', code:'CNV.3', name:'LOHC dehydrogenation', when:'fuelH2 && conv3 > 0 && carrierLOHC', land:'conv3 * regasF', cap:'{conv3:0} t H₂/yr', eq:'E13  A = M_H₂ × a_reconv (heat demand not counted)', keys:'regasF'}),
+ R_({id:'berthDS', fn:'TRF-IN', code:'IN.1/OUT.1', name:'Deep-sea berths, shared (SRC.1 + SNK.1/SNK.2)', when:'sharedBerth && hrsInD > 0 && hrsOutD > 0',
+     defs:'nbD = ceil((hrsInD + hrsOutD) / (8760 * occ))\nLbD = berthLenF * loaD\ncallsD = callsInD + callsOutD\nberthsN = berthsN + nbD\nquayM = quayM + nbD * LbD', land:'nbD * berthLand * 10000',
+     cap:'{nbD:0} berth(s) × ≈ {LbD:0} m · {callsD:1} calls/yr', water:'berth pockets',
+     eq:'E22–E25, E40  calls = M_deep / P_deep (in + out);  hours = calls × (P_deep / q_deep + t_moor)\nn = ⌈Σ hours / (8760 × occupancy)⌉;  L = f_L × LOA_deep;  A = n × A_deep',
+     keys:'parcel, qShip, tMoor, occ, berthLand, loaD, berthLenF'}),
+ R_({id:'berthDI', fn:'TRF-IN', code:'IN.1', name:'Deep-sea unloading berths (SRC.1)', when:'hrsInD > 0 && !(sharedBerth && hrsOutD > 0)',
+     defs:'nbDi = ceil(hrsInD / (8760 * occ))\nLbD = berthLenF * loaD\nberthsN = berthsN + nbDi\nquayM = quayM + nbDi * LbD', land:'nbDi * berthLand * 10000',
+     cap:'{nbDi:0} berth(s) × ≈ {LbD:0} m · {callsInD:1} calls/yr', water:'berth pockets',
+     eq:'E22–E25, E40  calls = M_deep / P_deep;  hours = calls × (P_deep / q_deep + t_moor)\nn = ⌈hours / (8760 × occupancy)⌉;  L = f_L × LOA_deep;  A = n × A_deep',
+     keys:'parcel, qShip, tMoor, occ, berthLand, loaD, berthLenF'}),
+ R_({id:'berthDO', fn:'TRF-OUT', code:'OUT.1', name:'Deep-sea loading berths (SNK.1, SNK.2)', when:'hrsOutD > 0 && !(sharedBerth && hrsInD > 0)',
+     defs:'nbDo = ceil(hrsOutD / (8760 * occ))\nLbD = berthLenF * loaD\nberthsN = berthsN + nbDo\nquayM = quayM + nbDo * LbD', land:'nbDo * berthLand * 10000',
+     cap:'{nbDo:0} berth(s) × ≈ {LbD:0} m · {callsOutD:1} calls/yr', water:'berth pockets',
+     eq:'E22–E25, E40  calls = M_export / P_deep;  hours = calls × (P_deep / q_deep + t_moor)\nn = ⌈hours / (8760 × occupancy)⌉;  L = f_L × LOA_deep;  A = n × A_deep',
+     keys:'parcel, qShip, tMoor, occ, berthLand, loaD, berthLenF'}),
+ R_({id:'berthSS', fn:'TRF-IN', code:'IN.1/OUT.1', name:'Short-sea berths, shared (SRC.2 + SNK.3)', when:'sharedBerth && hrsInS > 0 && hrsOutS > 0',
+     defs:'nbS = ceil((hrsInS + hrsOutS) / (8760 * occ))\nLbS = berthLenF * loaS\ncallsS = callsInS + callsOutS\nberthsN = berthsN + nbS\nquayM = quayM + nbS * LbS', land:'nbS * berthLandS * 10000',
+     cap:'{nbS:0} berth(s) × ≈ {LbS:0} m · {callsS:1} calls/yr', water:'berth pockets',
+     eq:'E22–E25, E40  calls = M_short / P_short (in + out);  hours = calls × (P_short / q_short + t_moor)\nn = ⌈Σ hours / (8760 × occupancy)⌉;  L = f_L × LOA_short;  A = n × A_short',
+     keys:'parcelS, qShort, tMoor, occ, berthLandS, loaS, berthLenF'}),
+ R_({id:'berthSI', fn:'TRF-IN', code:'IN.1', name:'Short-sea unloading berths (SRC.2)', when:'hrsInS > 0 && !(sharedBerth && hrsOutS > 0)',
+     defs:'nbSi = ceil(hrsInS / (8760 * occ))\nLbS = berthLenF * loaS\nberthsN = berthsN + nbSi\nquayM = quayM + nbSi * LbS', land:'nbSi * berthLandS * 10000',
+     cap:'{nbSi:0} berth(s) × ≈ {LbS:0} m · {callsInS:1} calls/yr', water:'berth pockets',
+     eq:'E22–E25, E40  calls = M_short / P_short;  hours = calls × (P_short / q_short + t_moor)\nn = ⌈hours / (8760 × occupancy)⌉;  L = f_L × LOA_short;  A = n × A_short',
+     keys:'parcelS, qShort, tMoor, occ, berthLandS, loaS, berthLenF'}),
+ R_({id:'berthSO', fn:'TRF-OUT', code:'OUT.1', name:'Coastwise loading berths (SNK.3)', when:'hrsOutS > 0 && !(sharedBerth && hrsInS > 0)',
+     defs:'nbSo = ceil(hrsOutS / (8760 * occ))\nLbS = berthLenF * loaS\nberthsN = berthsN + nbSo\nquayM = quayM + nbSo * LbS', land:'nbSo * berthLandS * 10000',
+     cap:'{nbSo:0} berth(s) × ≈ {LbS:0} m · {callsOutS:1} calls/yr', water:'berth pockets',
+     eq:'E22–E25, E40  calls = M_coastwise / P_short;  hours = calls × (P_short / q_short + t_moor)\nn = ⌈hours / (8760 × occupancy)⌉;  L = f_L × LOA_short;  A = n × A_short',
+     keys:'parcelS, qShort, tMoor, occ, berthLandS, loaS, berthLenF'}),
+ R_({id:'berthB', fn:'TRF-IN', code:'IN.1', name:'Inland barge unloading berths (SRC.3)', when:'hrsInB > 0',
+     defs:'nbB = ceil(hrsInB / (8760 * occ))\nLbB = berthLenF * loaB\nberthsN = berthsN + nbB\nquayM = quayM + nbB * LbB', land:'nbB * berthLandB * 10000',
+     cap:'{nbB:0} berth(s) × ≈ {LbB:0} m · {callsInB:1} calls/yr', water:'berth pockets',
+     eq:'E22–E25, E40  calls = M_barge / P_barge;  hours = calls × (P_barge / q_barge + t_moor,barge)\nn = ⌈hours / (8760 × occupancy)⌉;  L = f_L × LOA_barge;  A = n × A_barge',
+     keys:'parcelB, qBarge, tMoorB, occ, berthLandB, loaB, berthLenF'}),
+ R_({id:'pipeIn', fn:'TRF-IN', code:'IN.2a', name:'Pipeline reception station', when:'Mpipe > 0', land:'pipeSt * 10000', cap:'{Mpipe:0} t/yr', eq:'E49  A = station plot (flow-independent placeholder)', keys:'pipeSt'}),
+ R_({id:'direct', fn:'TRF-IN', code:'direct', name:'Trucks deliver straight to the ship', when:'Mover > 0 && directTTS && rail == 0', defs:'trucksIn = Mover / 365 / truckT',
+     cap:'{trucksIn:1} trucks/day', eq:'E26  No unloading bays: inbound and outbound transfer merge (see OUT.2b)', keys:'truckT'}),
+ R_({id:'overIn', fn:'TRF-IN', code:'IN.2b', name:'Rail / road unloading', when:'Mover > 0 && !(directTTS && rail == 0)',
+     defs:'trucksIn = Mover * (1 - rail) / 365 / truckT\ntrainsIn = if(rail > 0 && wagonT > 0, Mover * rail / 365 / (nWag * wagonT), 0)\nbaysIn = if(trucksIn > 0, ceil(trucksIn * tTruck / (hOp * uBay)), 0)\nsid = if(trainsIn > 0, max(1, ceil(trainsIn * tTrain / (20 * uBay))), 0)\nsidLen = nWag * 18 + 25\ntrainsWk = trainsIn * 7',
+     land:'baysIn * bayA + sid * sidLen * sidW', cap:'{trucksIn:1} trucks/day · {trainsWk:1} trains/week · {baysIn:0} bay(s) · {sid:0} siding(s)',
+     eq:'E26–E29, E41  trucks/day = M_road / (365 × c_truck);  bays = ⌈trucks × t_truck / (h_op × u)⌉\ntrains/day = M_rail / (365 × n_wagon × c_wagon);  L_siding = n_wagon × 18 m + 25 m\nA = bays × A_bay + sidings × L_siding × width',
+     keys:'truckT, tTruck, hOp, uBay, bayA, wagonT, nWag, tTrain, sidW'}),
+ R_({id:'sto0', fn:'STO', code:'STO.0', name:'Direct transfer — no tanks in the port', when:'stoDirect', cap:'Inventory stays on the truck, pipe or vessel', eq:'A = 0 (transfer spot counted under TRF-OUT)'}),
+ R_({id:'gasbuf', fn:'STO', code:'STO.1', name:'Compressed H₂ buffer', when:'!stoDirect && allGas', defs:'buf = D / 8760 * gBufH\nAg = buf * gBufF',
+     land:'Ag', zone:'pi * (sqrt(Ag / pi) + safR * 0.5) ^ 2 - Ag', cap:'{buf:1} t H₂ ({gBufH:0} h)', eq:'E43  buffer = M / 8760 × hours\nA = buffer × a_buffer', keys:'gBufH, gBufF, safR'}),
+ R_({id:'stoF', fn:'STO', code:'STO.F', name:'Floating storage', when:'stoFloat && !allGas', defs:'Nf = max(1, ceil(Vsto / fsuV))', cap:'{Nf:0} unit(s) × {fsuV:0} m³',
+     water:'{Nf:0} floating unit(s)', eq:'E14, E44  N = ⌈V / V_unit⌉ — water area, no land', keys:'cover, fsuV, fill'}),
+ R_({id:'sto1', fn:'STO', code:'STO.1', name:'Bulk tank farm', when:'(stoOne || stoTwo) && !allGas',
+     defs:'Vt = pi / 4 * tankD ^ 2 * tankH\nNt = max(2, ceil(Vsto / Vt))\nAs = Nt * (pitch * tankD) ^ 2\ntanks = tanks + Nt', land:'As', zone:'pi * (sqrt(As / pi) + safR) ^ 2 - As',
+     cap:'{Nt:0} × Ø{tankD:0} m · {Vsto:0} m³', eq:'E14–E16, E17–E19 via pitch, E21  V = [max(P_in, P_out) + M × days / 365] / (ρ × φ)\nN = ⌈V / (π/4 D² H)⌉;  A = N × (pitch × D)²\nzone = π(r + R)² − A,  r = √(A/π)',
+     keys:'cover, tankD, tankH, fill, pitch, safR, lohcDens'}),
+ R_({id:'sto2', fn:'STO', code:'STO.2', name:'Bunker staging tanks', when:'stoTwo && Mbunk > 0 && !allGas',
+     defs:'Vs = stemsHeld * stem * 1000 / dens / fill\nDs = min(20, tankD * 0.5)\nNs = max(1, ceil(Vs / (pi / 4 * Ds ^ 2 * 15)))\nAst = Ns * (pitch * Ds) ^ 2\ntanks = tanks + Ns',
+     land:'Ast', cap:'{Ns:0} × Ø{Ds:0} m · {Vs:0} m³', eq:'E34  V_stage = stems held × stem / (ρ × φ);  A = N × (pitch × D)²', keys:'stemsHeld, stem'}),
+ R_({id:'sts', fn:'TRF-OUT', code:'OUT.2a', name:'Ship-to-ship bunkering', when:'Mbunk > 0 && isSTS',
+     defs:'cyc = stem / qBunk + tLoadBV + tSail\nbv = ceil(ops * cyc / (8760 * uBV))\nbb = max(1, ceil(ops * tLoadBV / (8760 * occ)))', land:'bb * bargeLand * 10000',
+     cap:'{ops:0} ops/yr · {bv:0} bunker vessel(s) · {bb:0} barge berth(s)', water:'{bv:0} bunker vessel(s); transfer zone on water',
+     eq:'E31–E33, E45  ops = M_bunk / stem;  cycle = stem / q + t_load + t_sail\nvessels = ⌈ops × cycle / (8760 × u)⌉;  A = barge berths × A_berth', keys:'stem, qBunk, tLoadBV, tSail, uBV, bargeLand'}),
+ R_({id:'tts', fn:'TRF-OUT', code:'OUT.2b', name:'Truck-to-ship bunkering', when:'Mbunk > 0 && isTTS',
+     defs:'trucksOut = Mbunk / 365 / truckT\nbaysOut = if(directTTS, 0, ceil(trucksOut * tTruck / (hOp * uBay)))\nspots = max(1, ceil(ops * (stem / qBunk + 2) / (8760 * 0.5)))\nloads = ceil(stem / truckT)',
+     land:'baysOut * bayA + spots * ttsLand * 10000', zone:'spots * pi * xferR ^ 2 * 0.5', cap:'{ops:0} ops/yr · {loads:0} truckloads per stem · {baysOut:0} loading bays',
+     eq:'E35, E26, E27, E46, E21  truckloads per stem = ⌈stem / c_truck⌉\nA = loading bays × A_bay + quay spots × A_spot;  zone ≈ ½ π R² per spot (land side)', keys:'stem, truckT, tTruck, hOp, uBay, bayA, ttsLand, xferR'}),
+ R_({id:'pts', fn:'TRF-OUT', code:'OUT.2c', name:'Pipeline-to-ship bunkering', when:'Mbunk > 0 && isPTS',
+     defs:'tb = stem / qBunk + tMoor\nnp = max(1, ceil(ops * tb / (8760 * occ)))', land:'np * ptsLand * 10000', zone:'np * pi * xferR ^ 2 * 0.5',
+     cap:'{ops:0} ops/yr · {np:0} bunkering berth(s)', eq:'E31, E23, E46, E21  berth time = stem / q + t_moor\nn = ⌈ops × berth time / (8760 × occupancy)⌉;  A = n × A_manifold', keys:'stem, qBunk, tMoor, occ, ptsLand, xferR'}),
+ R_({id:'swap', fn:'TRF-OUT', code:'OUT.2d', name:'Container swap', when:'Mbunk > 0 && isSwap', defs:'perDay = Mbunk / 365 / contT\nslots = ceil(perDay * dwell)',
+     land:'slots * slotA', cap:'{perDay:1} containers/day · {slots:0} slots', eq:'E47  containers/day = M_bunk / (365 × c_container)\nA = containers/day × dwell × A_slot', keys:'contT, dwell, slotA'}),
+ R_({id:'dispPipe', fn:'TRF-OUT', code:'OUT.3', name:'Pipeline export station', when:'Mdisp > 0 && (dispPipe || (fuelNH3 && crack >= 1) || (fuelH2 && !dispTruck))',
+     land:'pipeSt * 10000', cap:'{Mdisp:0} t/yr', eq:'E49  A = station plot (placeholder)', keys:'pipeSt'}),
+ R_({id:'dispRail', fn:'TRF-OUT', code:'OUT.3', name:'Rail loading', when:'Mdisp > 0 && dispRail && !fuelH2 && !(fuelNH3 && crack >= 1) && wagonT > 0',
+     defs:'trainsD = Mdisp / 365 / (nWag * wagonT)\nsidD = max(1, ceil(trainsD * tTrain / (20 * uBay)))\ntrainsDWk = trainsD * 7', land:'sidD * (nWag * 18 + 25) * sidW',
+     cap:'{trainsDWk:1} trains/week · {sidD:0} siding(s)', eq:'E28, E29, E41  trains/day = M / (365 × n_wagon × c_wagon)\nA = sidings × L_siding × width', keys:'wagonT, nWag, tTrain, sidW'}),
+ R_({id:'dispTruck', fn:'TRF-OUT', code:'OUT.3', name:'Truck loading', when:'Mdisp > 0 && dispTruck && !(fuelNH3 && crack >= 1)',
+     defs:'trucksD = Mdisp / 365 / truckT\nbaysD = ceil(trucksD * tTruck / (hOp * uBay))', land:'baysD * bayA', cap:'{trucksD:1} trucks/day · {baysD:0} bay(s)',
+     eq:'E26, E27, E41  trucks/day = M / (365 × c_truck);  bays = ⌈trucks × t / (h_op × u)⌉;  A = bays × A_bay', keys:'truckT, tTruck, hOp, uBay, bayA'}),
+ R_({id:'bog', fn:'RET', code:'RET.BOG', name:'Boil-off handling', when:'bor > 0 && inv > 0 && !stoDirect && !allGas', defs:'bogd = inv * bor / 100', land:'bogFix * 10000',
+     cap:'{bogd:1} t/day boil-off', eq:'E20, E49  m_BOG = inventory × BOR', keys:'bor, bogFix'}),
+ R_({id:'vap', fn:'RET', code:'RET.VAP', name:'Vapour return and recovery', when:'marine && !allGas', land:'vapFix * 10000', cap:'Lines, arms, recovery unit', eq:'E49  A = fixed plot (placeholder)', keys:'vapFix'}),
+ R_({id:'lohcR', fn:'RET', code:'RET.LOHC', name:'Unloaded-carrier tanks', when:'fuelH2 && carrierLOHC && As > 0', land:'As', cap:'≈ same volume as LOHC storage', eq:'V_return ≈ V_delivered carrier'}),
+ R_({id:'subst', fn:'FEED', code:'FEED.PWR', name:'Substation and grid connection', when:'elecSum > 0', defs:'peakMW = MW + max(0, elecSum - MH2 * eEl) / 8760',
+     land:'max(3000, peakMW * subF)', cap:'≈ {peakMW:0} MW', eq:'E48  MW_peak = MW_electrolyser + other load / 8760\nA = max(0.3 ha, MW_peak × a_substation)', keys:'subF'})
+];
+const DEFAULT_MC = {draws:400, seed:12345};
+const MODEL_VERSION = 4.2;
+
+/* =====================================================================
+   3. EXPRESSION LANGUAGE (no eval): numbers, variables, + − × / ^, comparisons,
+   && || !, and functions if(c,a,b) max min ceil floor round sqrt abs log10 ln exp; constant pi
+   ===================================================================== */
+const FUNCS = {max:Math.max, min:Math.min, ceil:Math.ceil, floor:Math.floor, round:Math.round, sqrt:Math.sqrt, abs:Math.abs,
+               log10:Math.log10, ln:Math.log, exp:Math.exp};
+function tokenize(src){
+  const t=[]; let i=0;
+  while(i<src.length){
+    const c=src[i];
+    if(/\s/.test(c)){ i++; continue; }
+    if(/[0-9.]/.test(c)){ const m=src.slice(i).match(/^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?/); t.push({k:'num', v:parseFloat(m[0])}); i+=m[0].length; continue; }
+    if(/[A-Za-z_]/.test(c)){ const m=src.slice(i).match(/^[A-Za-z_]\w*/); t.push({k:'id', v:m[0]}); i+=m[0].length; continue; }
+    const two=src.slice(i,i+2);
+    if(['<=','>=','==','!=','&&','||'].includes(two)){ t.push({k:'op', v:two}); i+=2; continue; }
+    if('+-*/^(),<>!'.includes(c)){ t.push({k:'op', v:c}); i++; continue; }
+    throw new Error(`unexpected character “${c}”`);
+  }
+  return t;
+}
+function compileExpr(src){
+  const t=tokenize(String(src)); let p=0;
+  const peek=()=>t[p], eat=(v)=>{ if(t[p] && t[p].v===v){ p++; return true; } return false; };
+  const need=(v)=>{ if(!eat(v)) throw new Error(`expected “${v}”`); };
+  function orE(){ let a=andE(); while(eat('||')){ const b=andE(), x=a; a=c=>(x(c)||b(c))?1:0; } return a; }
+  function andE(){ let a=eqE(); while(eat('&&')){ const b=eqE(), x=a; a=c=>(x(c)&&b(c))?1:0; } return a; }
+  function eqE(){ let a=relE(); for(;;){ if(eat('==')){ const b=relE(), x=a; a=c=>x(c)===b(c)?1:0; } else if(eat('!=')){ const b=relE(), x=a; a=c=>x(c)!==b(c)?1:0; } else return a; } }
+  function relE(){ let a=addE(); for(;;){ const o=peek(); if(o && ['<','>','<=','>='].includes(o.v)){ p++; const b=addE(), x=a;
+        a = o.v==='<'? c=>x(c)<b(c)?1:0 : o.v==='>'? c=>x(c)>b(c)?1:0 : o.v==='<='? c=>x(c)<=b(c)?1:0 : c=>x(c)>=b(c)?1:0; } else return a; } }
+  function addE(){ let a=mulE(); for(;;){ if(eat('+')){ const b=mulE(), x=a; a=c=>x(c)+b(c); } else if(eat('-')){ const b=mulE(), x=a; a=c=>x(c)-b(c); } else return a; } }
+  function mulE(){ let a=unE(); for(;;){ if(eat('*')){ const b=unE(), x=a; a=c=>x(c)*b(c); } else if(eat('/')){ const b=unE(), x=a; a=c=>{ const d=b(c); return d===0?0:x(c)/d; }; } else return a; } }
+  function unE(){ if(eat('-')){ const a=unE(); return c=>-a(c); } if(eat('!')){ const a=unE(); return c=>a(c)?0:1; } if(eat('+')) return unE(); return powE(); }
+  function powE(){ const a=prim(); if(eat('^')){ const b=unE(); return c=>Math.pow(a(c),b(c)); } return a; }
+  function prim(){
+    const tk=t[p++]; if(!tk) throw new Error('unexpected end');
+    if(tk.k==='num'){ const v=tk.v; return ()=>v; }
+    if(tk.k==='id'){
+      if(eat('(')){
+        const args=[]; if(!eat(')')){ do{ args.push(orE()); } while(eat(',')); need(')'); }
+        if(tk.v==='if'){ if(args.length!==3) throw new Error('if() needs three arguments'); const [cc,a,b]=args; return c=>cc(c)?a(c):b(c); }
+        const f=FUNCS[tk.v]; if(!f) throw new Error(`unknown function ${tk.v}()`);
+        return c=>f(...args.map(g=>g(c)));
+      }
+      if(tk.v==='pi') return ()=>Math.PI;
+      const name=tk.v; return c=>{ const v=c[name]; if(v===undefined) throw new Error(`unknown variable ${name}`); return typeof v==='boolean'?(v?1:0):v; };
+    }
+    if(tk.v==='('){ const e=orE(); need(')'); return e; }
+    throw new Error(`unexpected “${tk.v}”`);
+  }
+  const e=orE(); if(p<t.length) throw new Error(`unexpected “${t[p].v}”`);
+  return e;
+}
+function compileDefs(text){
+  const out=[]; String(text||'').split('\n').forEach((line,i)=>{
+    const l=line.trim(); if(!l || l.startsWith('#')) return;
+    const m=l.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/); if(!m) throw new Error(`line ${i+1}: expected “name = expression”`);
+    try{ out.push({name:m[1], fn:compileExpr(m[2])}); } catch(e){ throw new Error(`line ${i+1}: ${e.message}`); }
+  });
+  return out;
+}
+
+/* =====================================================================
+   4. MODEL STORE (defaults + designer overrides in localStorage)
+   ===================================================================== */
+const LS_KEY = 'portfit_v1_model';
+const clone = o => JSON.parse(JSON.stringify(o));
+function defaultModel(){ return {version:MODEL_VERSION, params:clone(DEFAULT_PARAMS), common:DEFAULT_COMMON, rules:clone(DEFAULT_RULES), totals:DEFAULT_TOTALS, mc:clone(DEFAULT_MC)}; }
+function loadModel(){
+  try{ const raw = localStorage.getItem(LS_KEY); if(raw){ const m=JSON.parse(raw); if(m && m.version===MODEL_VERSION && m.params && m.rules) return m; } } catch(e){}
+  return defaultModel();
+}
+function saveModel(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(MODEL)); return true; } catch(e){ return false; } }
+let MODEL = loadModel();
+let COMPILED = null;
+function compileModel(m){
+  const errors=[]; const c={common:[], rules:[], totals:[]};
+  try{ c.common=compileDefs(m.common); } catch(e){ errors.push(`Common definitions — ${e.message}`); }
+  try{ c.totals=compileDefs(m.totals); } catch(e){ errors.push(`Totals — ${e.message}`); }
+  m.rules.forEach(r=>{
+    try{
+      c.rules.push(Object.assign({}, r, {whenFn:compileExpr(r.when||'1'), defsC:compileDefs(r.defs), landFn:compileExpr(r.land||'0'),
+        zoneFn:compileExpr(r.zone||'0'), elecFn:compileExpr(r.elec||'0'), keyList:String(r.keys||'').split(',').map(s=>s.trim()).filter(Boolean)}));
+    } catch(e){ errors.push(`Rule ${r.id} — ${e.message}`); }
+  });
+  return {c, errors};
+}
+
+/* =====================================================================
+   5. STATE
+   ===================================================================== */
+function blankCfg(f){ return {preset:null, src:{}, snk:{}, sto:'STO.1', bunk:'OUT.2a', disp:f==='H2'?'pipe':'rail', carrier:'LH2', crack:0, co2:'dac', railIn:.5}; }
+const state = {
+  port:{name:'Example port', loc:'', lat:'', lon:'', used:800, committed:100, potential:130, res:'off'},
+  demand:{mode:'share', total:10, unit:'PJ', include:{H2:true, MeOH:true, NH3:true}, share:{H2:5, MeOH:30, NH3:15}, direct:{H2:5000, MeOH:150000, NH3:80000}},
+  cfg:{H2:blankCfg('H2'), MeOH:blankCfg('MeOH'), NH3:blankCfg('NH3')},
+  tab:'MeOH', elyTech:'PEM', pv:{}, saved:[], cmpA:null, cmpB:null, anchorLoaded:null, dtab:'params', last:null, mc:null
+};
+const ELY = {PEM:[105,80,130], ALK:[135,100,170], compact:[17,12,22]};
+
+function pdRange(key, f){
+  const d = MODEL.params[key]; if(!d) return [0,0,0];
+  if(d.all) return d.all; if(d.byFuel) return d.byFuel[f] || [0,0,0]; if(d.byType) return d.byType[state.port.res] || [0,0,0];
+  return [0,0,0];
+}
+function isFuelParam(key){ return !!(MODEL.params[key] && MODEL.params[key].byFuel); }
+function resetPV(){
+  state.pv = {};
+  for(const k in MODEL.params){
+    if(isFuelParam(k)){ state.pv[k] = {}; FKEYS.forEach(f=>state.pv[k][f]=pdRange(k,f)[0]); }
+    else state.pv[k] = pdRange(k)[0];
+  }
+  state.pv.elyF = ELY[state.elyTech][0];
+}
+function pvGet(key, f){ const v=state.pv[key]; if(v===undefined) return pdRange(key,f)[0]; return (typeof v==='object') ? v[f] : v; }
+function pvSet(key, f, val){ if(isFuelParam(key)){ if(typeof state.pv[key]!=='object') state.pv[key]={}; state.pv[key][f]=val; } else state.pv[key]=val; }
+function rangeFor(key, f){ if(key==='elyF') return ELY[state.elyTech]; return pdRange(key, f); }
+
+/* =====================================================================
+   6. DEMAND
+   ===================================================================== */
+function demands(){
+  const d = state.demand, out = {};
+  if(d.mode==='share'){
+    const GJ = d.unit==='PJ' ? d.total*1e6 : d.total*41;
+    FKEYS.forEach(f=>{ out[f] = d.include[f] ? GJ*(d.share[f]||0)/100/FUELS[f].lhv : 0; });
+  } else FKEYS.forEach(f=>{ out[f] = Math.max(0, d.direct[f]||0); });
+  return out;
+}
+const activeFuels = () => { const D=demands(); return FKEYS.filter(f=>D[f]>0); };
+
+/* =====================================================================
+   7. ENGINE — flows (fixed) + compiled rules (editable)
+   ===================================================================== */
+function norm(m){ const s=Object.values(m).reduce((a,b)=>a+b,0); const o={}; for(const k in m) o[k]= s>0 ? m[k]/s : 0; return o; }
+const srcState = (code,f) => f==='H2' && (code==='SRC.6'||code==='SRC.4') ? 'gas' : 'liq';
+const snkState = (code,f) => f==='H2' && (code==='SNK.5'||code==='SNK.6') ? 'gas' : 'liq';
+
+function flowsFor(f, D, cfg){
+  const F=FUELS[f], s=norm(cfg.src), k=norm(cfg.snk), sv=c=>s[c]||0, kv=c=>k[c]||0;
+  let conv2=0, conv3=0;
+  if(f==='H2') SRC.forEach(a=>SNK.forEach(b=>{ const fl=D*sv(a.c)*kv(b.c); if(!fl) return;
+      const si=srcState(a.c,f), so=snkState(b.c,f); if(si==='gas'&&so==='liq') conv2+=fl; if(si==='liq'&&so==='gas') conv3+=fl; }));
+  if(f==='NH3') conv3 = D*(kv('SNK.5')+kv('SNK.6'))*cfg.crack;
+  const Mprod = D*sv('SRC.6');
+  const allGas = f==='H2' && SRC.every(a=>!sv(a.c)||srcState(a.c,f)==='gas') && SNK.every(b=>!kv(b.c)||snkState(b.c,f)==='gas');
+  const Mbunk = D*kv('SNK.4');
+  const stoDirect = cfg.sto==='STO.0';
+  return {
+    D, Mprod, MH2:Mprod*F.h2, Mco2:Mprod*F.co2, Mn2:Mprod*F.n2, conv2, conv3,
+    MinDeep:D*sv('SRC.1'), MinShort:D*sv('SRC.2'), MinBarge:D*sv('SRC.3'), Mpipe:D*sv('SRC.4'), Mover:D*sv('SRC.5'),
+    MoutDeep:D*(kv('SNK.1')+kv('SNK.2')), MoutShort:D*kv('SNK.3'), Mbunk, Mdisp:D*(kv('SNK.5')+kv('SNK.6')),
+    fuelH2:+(f==='H2'), fuelMeOH:+(f==='MeOH'), fuelNH3:+(f==='NH3'), sharedBerth:1,
+    stoDirect:+stoDirect, stoOne:+(cfg.sto==='STO.1'), stoTwo:+(cfg.sto==='STO.2'), stoFloat:+(cfg.sto==='STO.F'),
+    isSTS:+(cfg.bunk==='OUT.2a'), isTTS:+(cfg.bunk==='OUT.2b'), isPTS:+(cfg.bunk==='OUT.2c'), isSwap:+(cfg.bunk==='OUT.2d'),
+    dispPipe:+(cfg.disp==='pipe'), dispRail:+(cfg.disp==='rail'), dispTruck:+(cfg.disp==='truck'),
+    carrierLH2:+(cfg.carrier==='LH2'), carrierLOHC:+(cfg.carrier==='LOHC'),
+    co2DAC:+(cfg.co2==='dac'), co2Point:+(cfg.co2==='point'), co2Import:+(cfg.co2==='import'),
+    elyPlant:+(state.elyTech!=='compact'), allGas:+allGas, directTTS:+(stoDirect && Mbunk>0 && cfg.bunk==='OUT.2b'),
+    rail: f==='H2' ? 0 : cfg.railIn, crack:cfg.crack
+  };
+}
+const INIT_VARS = {MW:0, As:0, tanks:0, bv:0, trucksIn:0, trucksOut:0, trucksD:0, trainsIn:0, trainsD:0, berthsN:0, quayM:0, landSum:0, zoneSum:0, elecSum:0};
+
+function runFuel(f, D, cfg, p){
+  const errors=[];
+  const ctx = Object.assign({}, p, flowsFor(f, D, cfg), INIT_VARS);
+  COMPILED.c.common.forEach(d=>{ try{ ctx[d.name]=d.fn(ctx); } catch(e){ errors.push(`common ${d.name}: ${e.message}`); ctx[d.name]=0; } });
+  const fac=[];
+  COMPILED.c.rules.forEach(r=>{
+    try{
+      if(!r.whenFn(ctx)) return;
+      r.defsC.forEach(d=>{ ctx[d.name]=d.fn(ctx); });
+      const land=Math.max(0, r.landFn(ctx)||0), zone=Math.max(0, r.zoneFn(ctx)||0), elec=Math.max(0, r.elecFn(ctx)||0);
+      fac.push({id:r.id, fn:r.fn, code:r.code, name:r.name, land, zone, elec, cap:tpl(r.cap,ctx), water:tpl(r.water,ctx), eq:r.eq, keys:r.keyList, note:r.note});
+      ctx.landSum+=land; ctx.zoneSum+=zone; ctx.elecSum+=elec;
+    } catch(e){ errors.push(`${r.id}: ${e.message}`); }
+  });
+  COMPILED.c.totals.forEach(d=>{ try{ ctx[d.name]=d.fn(ctx); } catch(e){ errors.push(`totals ${d.name}: ${e.message}`); ctx[d.name]=0; } });
+  return {f, fac, ctx, fence:ctx.fence||0, zones:ctx.zones||0, outside:ctx.outside||0, elec:ctx.elecSum, errors};
+}
+function tpl(s, ctx){ return String(s||'').replace(/\{(\w+)(?::(\d))?\}/g, (m,n,d)=>{ const v=ctx[n]; return v===undefined ? m : fmt(v, d?+d:0); }); }
+function centralParams(f){ const p={}; for(const k in MODEL.params) p[k]=pvGet(k,f); p.elyF=state.pv.elyF; return p; }
+
+function runAll(){
+  const D=demands(), out={fuels:{}, fence:0, zones:0, outside:0, elec:0, errors:[]};
+  activeFuels().forEach(f=>{ const r=runFuel(f, D[f], state.cfg[f], centralParams(f)); out.fuels[f]=r;
+    out.fence+=r.fence; out.zones+=r.zones; out.outside+=r.outside; out.elec+=r.elec; out.errors.push(...r.errors.map(e=>`${f} ${e}`)); });
+  return out;
+}
+
+/* seeded Monte Carlo */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function tri(u,a,c,b){ if(!(b>a)) return c; c=Math.min(Math.max(c,a),b); const fc=(c-a)/(b-a); return u<fc ? a+Math.sqrt(u*(b-a)*(c-a)) : b-Math.sqrt((1-u)*(b-a)*(b-c)); }
+function runMC(){
+  const D=demands(), fuels=activeFuels(), n=Math.max(50, Math.min(5000, MODEL.mc.draws|0)), rng=mulberry32(MODEL.mc.seed|0);
+  const keys=Object.keys(MODEL.params);
+  const acc={fence:[], zone:[], all:[]}, perFuel={}; fuels.forEach(f=>perFuel[f]=[]);
+  for(let i=0;i<n;i++){
+    const draw={};
+    keys.forEach(k=>{ if(isFuelParam(k)){ draw[k]={}; FKEYS.forEach(f=>{ const [c,lo,hi]=rangeFor(k,f); draw[k][f]=tri(rng(),lo,pvGet(k,f),hi); }); }
+                      else { const [c,lo,hi]=rangeFor(k); draw[k]=tri(rng(),lo,pvGet(k),hi); } });
+    const ely=ELY[state.elyTech]; draw.elyF=tri(rng(), ely[1], state.pv.elyF, ely[2]);
+    let fe=0, zo=0, ou=0;
+    fuels.forEach(f=>{ const p={}; keys.forEach(k=>p[k]= isFuelParam(k)? draw[k][f] : draw[k]); p.elyF=draw.elyF;
+      const r=runFuel(f, D[f], state.cfg[f], p); fe+=r.fence; zo+=r.zones; ou+=r.outside; perFuel[f].push(r.fence); });
+    acc.fence.push(fe); acc.zone.push(fe+zo); acc.all.push(fe+zo+ou);
+  }
+  const q=(a,x)=>{ if(!a.length) return 0; const s=a.slice().sort((m,k)=>m-k); return s[Math.min(s.length-1, Math.round(x*(s.length-1)))]; };
+  const pick=a=>({p10:q(a,.1), p50:q(a,.5), p90:q(a,.9)});
+  const pf={}; fuels.forEach(f=>pf[f]=pick(perFuel[f]));
+  return {fence:pick(acc.fence), zone:pick(acc.zone), all:pick(acc.all), perFuel:pf, n};
+}
+
+/* =====================================================================
+   8. HELPERS
+   ===================================================================== */
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+function fmt(x,d=0){ if(!isFinite(x)) return '–'; return Number(x).toLocaleString('en-US',{maximumFractionDigits:d, minimumFractionDigits:d}); }
+const ha = m2 => m2/1e4;
+function fmtHa(m2){ const h=ha(m2); return h<10? fmt(h,1) : fmt(h,0); }
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function stepDec(step){ return step<1 ? (step<.01?4 : step<.1?2 : 1) : 0; }
+function totalPortLand(){ const p=state.port; return (+p.used||0)+(+p.committed||0)+(+p.potential||0); }
+
+/* =====================================================================
+   9. RENDER: 1 port context
+   ===================================================================== */
+function renderPort(){
+  const p=state.port;
+  [['portName','name'],['portLoc','loc'],['portLat','lat'],['portLon','lon'],['landUsed','used'],['landCommitted','committed'],['landPotential','potential']].forEach(([id,k])=>{
+    const el=$('#'+id); if(document.activeElement!==el) el.value=p[k]; });
+  $('#resType').value=p.res;
+  const tot=totalPortLand()||1;
+  const parts=[['Currently used',p.used,'#7d8792'],['In progress / committed',p.committed,'#b8a06a'],['Potential use',p.potential,'#2e7d4f']];
+  $('#landBar').innerHTML=parts.map(([n,v,c])=>`<span style="width:${(+v||0)/tot*100}%; background:${c}" title="${n}"></span>`).join('');
+  $('#landLegend').innerHTML=parts.map(([n,v,c])=>`<span><i style="background:${c}"></i>${n} ${fmt(+v||0)} ha</span>`).join('')+`<span>Total ${fmt(totalPortLand())} ha</span>`;
+}
+
+/* 2 fuel demand */
+function renderDemand(){
+  const d=state.demand;
+  $$('#demandMode button').forEach(b=>b.classList.toggle('on', b.dataset.mode===d.mode));
+  let h='';
+  if(d.mode==='share'){
+    h+=`<div class="grid2"><div class="field"><label for="totalUse">Annual fuel use served by the port</label><input type="number" id="totalUse" min="0" step="0.1" value="${d.total}"></div>
+      <div class="field"><label for="totalUnit">Unit</label><select id="totalUnit"><option value="PJ" ${d.unit==='PJ'?'selected':''}>PJ/yr (energy)</option><option value="tVLSFO" ${d.unit==='tVLSFO'?'selected':''}>t/yr Heavy Fuel Oil (HFO) equivalent (41 GJ/t)</option></select>
+      <div class="hint">Shares are energy shares of this total. IMO, EU FuelEU Maritime and the IEA use rounded HFO values of about 40–42 GJ/t, depending on the fuel grade.</div></div></div>
+      <table class="tbl"><thead><tr><th>Include</th><th>Fuel</th><th class="r">Share of annual fuel use (%)</th></tr></thead><tbody>
+      ${FKEYS.map(f=>`<tr><td><input type="checkbox" data-inc="${f}" ${d.include[f]?'checked':''} aria-label="Include ${FUELS[f].name}"></td><td><i class="dot d2" style="--fuel:${FUELS[f].color}; border-color:${FUELS[f].color}; background:${FUELS[f].color}"></i> ${FUELS[f].name}</td>
+        <td class="r"><input type="number" min="0" max="100" step="1" data-share="${f}" value="${d.share[f]}" ${d.include[f]?'':'disabled'}></td></tr>`).join('')}</tbody></table>`;
+    const sum=FKEYS.reduce((a,f)=>a+(d.include[f]?(+d.share[f]||0):0),0);
+    if(sum>100) h+=`<div class="note"><span class="err">Shares add up to ${fmt(sum)}%; reduce them to 100% or less.</span></div>`;
+  } else {
+    h+=`<table class="tbl"><thead><tr><th>Fuel</th><th class="r">Annual fuel demand (t/yr)</th></tr></thead><tbody>
+      ${FKEYS.map(f=>`<tr><td><i class="dot d2" style="border-color:${FUELS[f].color}; background:${FUELS[f].color}"></i> ${FUELS[f].name}</td><td class="r"><input type="number" min="0" step="1000" data-direct="${f}" value="${d.direct[f]}" style="width:130px"></td></tr>`).join('')}
+      </tbody></table><div class="note">Enter 0 for a fuel the port will not handle.</div>`;
+  }
+  $('#demandInputs').innerHTML=h;
+  const D=demands(); const PJ=f=>D[f]*FUELS[f].lhv/1e6; const tot=FKEYS.reduce((a,f)=>a+PJ(f),0)||1;
+  $('#demandTable tbody').innerHTML=FKEYS.map(f=>`<tr><td>${FUELS[f].name}</td><td class="r">${fmt(D[f])}</td><td class="r">${fmt(PJ(f),2)}</td><td class="r">${fmt(PJ(f)/tot*100)}%</td></tr>`).join('')
+    + `<tr><td><b>Total</b></td><td class="r"></td><td class="r"><b>${fmt(FKEYS.reduce((a,f)=>a+PJ(f),0),2)}</b></td><td class="r"></td></tr>`;
+  const ti=$('#totalUse'); if(ti) ti.oninput=()=>{ d.total=Math.max(0,+ti.value||0); refresh('demand'); };
+  const tu=$('#totalUnit'); if(tu) tu.onchange=()=>{ d.unit=tu.value; refresh('demand'); };
+  $$('#demandInputs [data-inc]').forEach(c=>c.onchange=()=>{ d.include[c.dataset.inc]=c.checked; renderDemand(); refresh('demandStructure'); });
+  $$('#demandInputs [data-share]').forEach(c=>c.oninput=()=>{ d.share[c.dataset.share]=Math.max(0,+c.value||0); refreshDemandTableOnly(); refresh('demandStructure'); });
+  $$('#demandInputs [data-direct]').forEach(c=>c.oninput=()=>{ d.direct[c.dataset.direct]=Math.max(0,+c.value||0); refreshDemandTableOnly(); refresh('demandStructure'); });
+}
+function refreshDemandTableOnly(){
+  const D=demands(); const PJ=f=>D[f]*FUELS[f].lhv/1e6; const tot=FKEYS.reduce((a,f)=>a+PJ(f),0)||1;
+  $('#demandTable tbody').innerHTML=FKEYS.map(f=>`<tr><td>${FUELS[f].name}</td><td class="r">${fmt(D[f])}</td><td class="r">${fmt(PJ(f),2)}</td><td class="r">${fmt(PJ(f)/tot*100)}%</td></tr>`).join('')
+    + `<tr><td><b>Total</b></td><td class="r"></td><td class="r"><b>${fmt(FKEYS.reduce((a,f)=>a+PJ(f),0),2)}</b></td><td class="r"></td></tr>`;
+}
+
+/* 3 configuration */
+function fuelTabs(id){
+  const act=activeFuels();
+  if(!act.includes(state.tab)) state.tab = act[0] || 'MeOH';
+  $(id).innerHTML = act.length ? act.map(f=>`<button type="button" data-tab="${f}" class="${state.tab===f?'on':''}"><i style="background:${FUELS[f].color}"></i>${FUELS[f].name}</button>`).join('')
+                               : '<span class="note">No fuel has a demand above zero. Set one in module 2.</span>';
+  $$(id+' [data-tab]').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; setFuelColour(); renderConfig(); refresh('tab'); });
+}
+function setFuelColour(){ document.documentElement.style.setProperty('--fuel', FUELS[state.tab].color); }
+function applyPreset(f, code){
+  const pr = PRESETS[f].find(x=>x.code===code) || PRESETS[f][0], c=state.cfg[f];
+  c.preset=pr.code; c.src={}; SRC.forEach(a=>c.src[a.c]=0); Object.assign(c.src, pr.src);
+  c.snk={}; SNK.forEach(b=>c.snk[b.c]=0); Object.assign(c.snk, pr.snk);
+  c.sto=pr.sto||'STO.1'; c.bunk=pr.bunk || (rate('OUT.2a',f)? 'OUT.2a':'OUT.2b'); c.disp=pr.disp || (f==='H2'?'pipe':'rail');
+  c.carrier=pr.carrier||'LH2'; c.crack= pr.crack!=null? pr.crack : 0; c.co2=pr.co2||'dac'; c.railIn= pr.railIn!=null? pr.railIn : .5;
+}
+function pct(mix,c){ const s=Object.values(mix).reduce((a,b)=>a+b,0); return s>0? Math.round((mix[c]||0)/s*100)+'%' : '0%'; }
+function mixRows(list, mix, kind, f){
+  return list.map(o=>{ const r=rate(o.c,f), v=Math.round((mix[o.c]||0)*100);
+    return `<div class="mixrow ${r===0?'dis':''}"><span class="cd">${o.c}</span><span class="lb">${o.n}<span class="rt" title="${DOTTXT(r)}">${DOT(r)}</span></span>
+      <input type="range" min="0" max="100" step="5" value="${v}" data-kind="${kind}" data-c="${o.c}" ${r===0?'disabled':''} aria-label="${o.n} share">
+      <span class="pv">${pct(mix,o.c)}</span></div>`; }).join('');
+}
+function segBtns(list, cur, attr, f){
+  return list.map(([v,label,code])=>{ const r=code? rate(code,f) : 2;
+    return `<button type="button" data-${attr}="${v}" class="${cur===v?'on':''}" ${r===0?'disabled':''}>${code?`<span class="c">${code}</span>`:''}${label}${code?`<span class="rt" title="${DOTTXT(r)}">${DOT(r)}</span>`:''}</button>`; }).join('');
+}
+function renderConfig(){
+  fuelTabs('#ftabs3'); fuelTabs('#ftabs4');
+  const f=state.tab; if(!activeFuels().length){ $('#cfgBody').innerHTML=''; return; }
+  const c=state.cfg[f];
+  $('#cfgBody').innerHTML = `
+    <div class="subh" style="margin-top:0">Reference configuration</div>
+    <div class="presets">${PRESETS[f].map(p=>`<button type="button" class="preset ${c.preset===p.code?'on':''}" data-p="${p.code}"><span class="code">${p.code}</span><span class="ev">${p.ev}</span><div class="ds">${p.d}</div></button>`).join('')}</div>
+    <div class="note">${f==='H2'?'H3 (ammonia import with cracking to hydrogen) is the same chain as A3 under e-Ammonia.':''} Adjusting any share or option below turns the configuration into a custom one.</div>
+    <div class="mixgrid" style="margin-top:14px">
+      <div><div class="subh" style="margin-top:0">Source side — how fuel reaches the port</div><div id="srcMix">${mixRows(SRC,c.src,'src',f)}</div></div>
+      <div><div class="subh" style="margin-top:0">Destination side — where fuel goes (SNK codes)</div><div id="snkMix">${mixRows(SNK,c.snk,'snk',f)}</div></div>
+    </div>
+    <div class="opts" id="opts"></div>
+    <div class="notices" id="notices"></div>`;
+  $$('#cfgBody .preset').forEach(b=>b.onclick=()=>{ applyPreset(f, b.dataset.p); renderConfig(); refresh('config'); });
+  $$('#srcMix input, #snkMix input').forEach(inp=>inp.oninput=()=>{
+    const m = inp.dataset.kind==='src'? c.src : c.snk; m[inp.dataset.c]=+inp.value/100; c.preset=null;
+    $$(`#${inp.dataset.kind}Mix .mixrow`).forEach(row=>{ const r=row.querySelector('input'); row.querySelector('.pv').textContent = pct(m, r.dataset.c); });
+    $$('#cfgBody .preset').forEach(b=>b.classList.remove('on')); renderOpts(); refresh('config');
+  });
+  renderOpts();
+}
+function renderOpts(){
+  const f=state.tab, c=state.cfg[f], k=norm(c.snk), s=norm(c.src); let h='';
+  h+=`<div class="opt"><h3>Storage (STO)</h3><div class="seg">${segBtns([['STO.0','Direct','STO.0'],['STO.1','One tier','STO.1'],['STO.2','Two tiers','STO.2'],['STO.F','Floating','STO.F']], c.sto,'sto',f)}</div></div>`;
+  if((k['SNK.4']||0)>0) h+=`<div class="opt"><h3>Bunkering mode (OUT.2)</h3><div class="seg">${segBtns([['OUT.2a','Ship-to-ship','OUT.2a'],['OUT.2b','Truck-to-ship','OUT.2b'],['OUT.2c','Pipeline-to-ship','OUT.2c'],['OUT.2d','Swap','OUT.2d']], c.bunk,'bunk',f)}</div></div>`;
+  if(((k['SNK.5']||0)+(k['SNK.6']||0))>0) h+=`<div class="opt"><h3>Landside dispatch (OUT.3)</h3><div class="seg">${segBtns(f==='H2'?[['pipe','Pipeline'],['truck','Truck']]:[['pipe','Pipeline'],['rail','Rail'],['truck','Truck']], c.disp,'disp',f)}</div></div>`;
+  if(f==='H2') h+=`<div class="opt"><h3>Hydrogen carrier for ships and trucks</h3><div class="seg">${segBtns([['LH2','Liquid (LH₂)'],['LOHC','LOHC']], c.carrier,'carrier',f)}</div><div class="hint">A mismatch with gaseous sources or users adds CNV.2 or CNV.3</div></div>`;
+  if(f==='NH3' && ((k['SNK.5']||0)+(k['SNK.6']||0))>0) h+=`<div class="opt"><h3>Cracked to hydrogen (CNV.3)</h3><input type="range" id="crack" min="0" max="100" step="5" value="${Math.round(c.crack*100)}" style="width:100%" aria-label="Share cracked"><div class="hint" id="crackHint">${Math.round(c.crack*100)}% of hinterland and local flow is cracked in the port</div></div>`;
+  if((s['SRC.6']||0)>0 && f==='MeOH') h+=`<div class="opt"><h3>CO₂ source (FEED.CO2)</h3><div class="seg">${segBtns([['point','Point source'],['dac','Direct air capture'],['import','Imported LCO₂']], c.co2,'co2',f)}</div></div>`;
+  if((s['SRC.5']||0)>0 && f!=='H2') h+=`<div class="opt"><h3>Rail share of overland tanker supply</h3><input type="range" id="railIn" min="0" max="100" step="5" value="${Math.round(c.railIn*100)}" style="width:100%" aria-label="Rail share"><div class="hint" id="railHint">${Math.round(c.railIn*100)}% by rail tank car, rest by road tanker</div></div>`;
+  $('#opts').innerHTML=h;
+  const bind=(attr,key)=>$$(`#opts [data-${attr}]`).forEach(b=>b.onclick=()=>{ c[key]=b.dataset[attr]; c.preset=null; $$('#cfgBody .preset').forEach(x=>x.classList.remove('on')); renderOpts(); refresh('config'); });
+  bind('sto','sto'); bind('bunk','bunk'); bind('disp','disp'); bind('carrier','carrier'); bind('co2','co2');
+  const cr=$('#crack'); if(cr) cr.oninput=()=>{ c.crack=+cr.value/100; c.preset=null; $('#crackHint').textContent=`${cr.value}% of hinterland and local flow is cracked in the port`; refresh('config'); };
+  const ri=$('#railIn'); if(ri) ri.oninput=()=>{ c.railIn=+ri.value/100; c.preset=null; $('#railHint').textContent=`${ri.value}% by rail tank car, rest by road tanker`; refresh('config'); };
+}
+function renderNotices(res){
+  const f=state.tab, r=res.fuels[f]; if(!r){ $('#notices') && ($('#notices').innerHTML=''); return; }
+  const c=state.cfg[f], s=norm(c.src), k=norm(c.snk), msgs=[];
+  if(!Object.values(c.src).some(v=>v>0)) msgs.push(['err','Set at least one source share above zero.']);
+  if(!Object.values(c.snk).some(v=>v>0)) msgs.push(['err','Set at least one destination share above zero.']);
+  const niche=activeCodes(f, r).filter(x=>R[x] && !x.startsWith('RET') && rate(x,f)===1);
+  if(niche.length) msgs.push(['warn',`Niche or pilot options in this configuration: ${niche.join(', ')}.`]);
+  if((s['SRC.1']||0)>0 && (k['SNK.1']||0)>0) msgs.push(['info','Deep-sea import shipped out again is re-export (SNK.2) rather than export.']);
+  if(c.sto==='STO.0' && (r.ctx.conv2>0 || r.ctx.conv3>0 || r.ctx.Mprod>0)) msgs.push(['err','Direct transfer cannot be combined with conversion or on-site production; choose one tier.']);
+  if(c.sto==='STO.2' && !((k['SNK.4']||0)>0 && (c.bunk==='OUT.2a'||c.bunk==='OUT.2c'))) msgs.push(['warn','Two storage tiers only make sense with ship-to-ship or pipeline-to-ship bunkering.']);
+  if(c.sto==='STO.F' && !((s['SRC.1']||0)+(s['SRC.2']||0)+(s['SRC.3']||0)>0)) msgs.push(['warn','Floating storage needs a waterborne source and a marine outlet.']);
+  const tIn=r.ctx.trucksIn||0, tOut=(r.ctx.trucksOut||0)+(r.ctx.trucksD||0);
+  if(tIn>150||tOut>150) msgs.push(['warn',`About ${fmt(Math.max(tIn,tOut))} trucks a day: road supply at this scale is impractical; consider rail or pipeline.`]);
+  if(f==='H2' && c.carrier==='LOHC' && (k['SNK.4']||0)>0) msgs.push(['warn','LOHC is not used for bunkering; truck-to-ship bunkering assumes liquid hydrogen.']);
+  if(r.errors.length) msgs.push(['err',`Model errors: ${r.errors.slice(0,3).map(esc).join('; ')}`]);
+  $('#notices').innerHTML = msgs.map(([t,m])=>`<div class="notice ${t}">${m}</div>`).join('');
+}
+
+/* chain codes */
+function activeCodes(f, r){
+  const c=state.cfg[f], s=norm(c.src), k=norm(c.snk), out=[];
+  SRC.forEach(a=>{ if(s[a.c]>0) out.push(a.c); }); SNK.forEach(b=>{ if(k[b.c]>0) out.push(b.c); });
+  r.fac.forEach(x=>x.code.split('/').forEach(cd=>{ if(!out.includes(cd)) out.push(cd); }));
+  if(!r.fac.some(x=>x.code.startsWith('CNV'))) out.push('CNV.0');
+  return out;
+}
+function fnOf(code){ return code.startsWith('SRC')?'SRC' : code.startsWith('FEED')?'FEED' : (code.startsWith('IN')||code==='direct')?'TRF-IN' : code.startsWith('CNV')?'CNV' : code.startsWith('STO')?'STO' : code.startsWith('OUT')?'TRF-OUT' : code.startsWith('SNK')?'SNK' : 'RET'; }
+function chainHTML(f, r){
+  const c=state.cfg[f], s=norm(c.src), k=norm(c.snk);
+  const by={}; FNS.forEach(([fn])=>by[fn]=[]);
+  activeCodes(f, r).forEach(cd=>{ const fn=fnOf(cd); const sh = fn==='SRC'? s[cd] : fn==='SNK'? k[cd] : null; by[fn].push([cd, sh]); });
+  const topSrc=SRC.filter(a=>s[a.c]>0).sort((a,b)=>s[b.c]-s[a.c]), sinks=SNK.filter(b=>k[b.c]>0).sort((a,b)=>k[b.c]-k[a.c]);
+  const pr = c.preset ? PRESETS[f].find(p=>p.code===c.preset) : null;
+  return `<div class="chainbox" style="--fc:${FUELS[f].color}"><div class="roleline"><span class="fuelname">${FUELS[f].name}</span>
+    <span class="role">Source side: <b>${topSrc.map(a=>a.role).join(' + ')||'—'}</b></span><span class="role">Destination side: <b>${sinks.map(b=>b.role).join(' + ')||'—'}</b></span>
+    <span class="match">${pr?`Reference configuration <b style="color:${FUELS[f].color}">${pr.code}</b> · ${pr.ev}`:'Custom configuration'}</span></div>
+    <div class="chain">${FNS.map(([fn,label])=>`<div class="fn"><div class="fnname">${fn} · ${label}</div>${by[fn].length? by[fn].map(([cd,sh])=>{ const rr=rate(cd,f);
+      return `<span class="chip on ${rr===1?'niche':''}" title="${DOTTXT(rr)}">${cd}${sh!=null&&sh<1?`<span class="pct">${Math.round(sh*100)}%</span>`:''}</span>`; }).join('') : '<span class="chip">—</span>'}</div>`).join('')}</div></div>`;
+}
+
+/* 4 facilities */
+function renderEly(){
+  $('#elyChoice').innerHTML = [['PEM','PEM plant incl. BoP'],['ALK','Alkaline plant incl. BoP'],['compact','Stack and building only']].map(([k,l])=>`<button type="button" data-ely="${k}" class="${state.elyTech===k?'on':''}">${l}</button>`).join('');
+  $$('#elyChoice [data-ely]').forEach(b=>b.onclick=()=>{ state.elyTech=b.dataset.ely; state.pv.elyF=ELY[state.elyTech][0]; renderEly(); refresh('structure'); });
+}
+function paramHTML(key, f){
+  const d=MODEL.params[key]; if(!d) return '';
+  const [c,lo,hi]=rangeFor(key,f); if(!(hi>lo)) return '';
+  const v=pvGet(key,f), dec=stepDec(d.step||1);
+  return `<div class="param" data-k="${key}"><label>${esc(d.t)}<b><span class="sv">${fmt(v,dec)}</span> ${esc(d.u)}</b></label>
+    <input type="range" min="${lo}" max="${hi}" step="${d.step||1}" value="${v}" aria-label="${esc(d.t)}">
+    <div class="src">${esc(d.src||'')}${d.gap?'<span class="gap">data gap</span>':''}${!isFuelParam(key)&&key!=='elyF'?' · applies to all fuels':''}</div></div>`;
+}
+function renderFacilities(res){
+  const f=state.tab, r=res.fuels[f];
+  if(!r){ $('#flows').innerHTML=''; $('#facilities').innerHTML='<div class="note">No active fuel.</div>'; return; }
+  const x=r.ctx;
+  $('#flows').innerHTML = [['Demand', `${fmt(x.D)} t/yr`], ['On-site production', `${fmt(x.Mprod)} t/yr`], ['Hydrogen required', `${fmt(x.MH2)} t/yr`],
+    [f==='NH3'?'Nitrogen':'CO₂ required', f==='NH3'? `${fmt(x.Mn2)} t/yr` : `${fmt(x.Mco2)} t/yr`], ['Electricity', `${fmt(r.elec/1000)} GWh/yr`], ['Renewable capacity', `${fmt(x.resMW||0)} MW`]]
+    .map(([k,v])=>`<div class="flow"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+  const open=new Set($$('details.fac[open]').map(d=>d.dataset.id));
+  let h='';
+  GROUPS.forEach(([fn,t,d])=>{
+    const fs=r.fac.filter(q=>q.fn===fn); if(!fs.length) return;
+    h+=`<div class="fgroup"><div class="gh"><span class="code">${fn}</span><span class="t">${t}</span><span class="d">${d}</span></div>`;
+    fs.forEach(q=>{ h+=`<details class="fac" data-id="${q.id}" ${open.has(q.id)?'open':''}><summary><span class="cd">${q.code}</span>
+      <span class="nm">${esc(q.name)}<span class="cap">${esc(q.cap)}</span>${q.note?`<span class="fnote">${esc(q.note)}</span>`:''}</span>
+      <span class="land">${fmt(ha(q.land),2)} ha${q.zone>0?`<small>+ ${fmt(ha(q.zone),2)} ha zone</small>`:''}${q.water?`<small style="color:var(--water)">${esc(q.water)}</small>`:''}</span></summary>
+      <div class="facbody"><div class="eqbox eq">${esc(q.eq||'')}</div><div class="params">${q.keys.map(k=>paramHTML(k,f)).join('')}</div></div></details>`; });
+    h+='</div>';
+  });
+  $('#facilities').innerHTML=h;
+  $$('#facilities .param input').forEach(inp=>inp.oninput=()=>{ const key=inp.closest('.param').dataset.k; pvSet(key, f, +inp.value);
+    $$(`#facilities .param[data-k="${key}"] .sv`).forEach(s=>s.textContent=fmt(+inp.value, stepDec(MODEL.params[key].step||1)));
+    $$(`#facilities .param[data-k="${key}"] input`).forEach(o=>{ if(o!==inp) o.value=inp.value; }); refresh('param'); });
+}
+function updateFacilitySummaries(res){
+  const r=res.fuels[state.tab]; if(!r) return;
+  r.fac.forEach(q=>{ const d=document.querySelector(`details.fac[data-id="${CSS.escape(q.id)}"]`); if(!d) return;
+    d.querySelector('summary .cap').textContent=q.cap;
+    d.querySelector('summary .land').innerHTML=`${fmt(ha(q.land),2)} ha${q.zone>0?`<small>+ ${fmt(ha(q.zone),2)} ha zone</small>`:''}${q.water?`<small style="color:var(--water)">${esc(q.water)}</small>`:''}`; });
+  const x=r.ctx; const v=$$('#flows .flow .v'); if(v.length===6){ v[4].textContent=`${fmt(r.elec/1000)} GWh/yr`; v[5].textContent=`${fmt(x.resMW||0)} MW`; }
+}
+
+/* 5 results */
+function fitStatus(need, avail){ if(avail<=0) return ['bad','No potential-use land given']; if(need.p90<=avail) return ['ok','Fits robustly (P90 within potential use)'];
+  if(need.p50<=avail) return ['warn','Fits conditionally (P50 fits, P90 does not)']; return ['bad','Does not fit (P50 exceeds potential use)']; }
+function renderResults(res, mc){
+  const rows=[['Inside the port fence', mc.fence, 'Facility plots × roads and utilities factor', 'var(--slate)'],
+              ['+ safety zones', mc.zone, 'Adds zones around storage, crackers and transfer spots', 'var(--caution)'],
+              ['+ renewables outside the fence', mc.all, res.elec>0 ? `Adds ${({off:'an offshore wind',on:'an onshore wind',pv:'a solar PV'})[state.port.res]} field for ${fmt(res.elec/1000)} GWh/yr` : 'No electricity demand in this configuration', 'var(--water)']];
+  const max=Math.max(1, mc.all.p90, mc.zone.p90), sc=v=>Math.max(0, Math.min(100, Math.log10(1+ha(v))/Math.log10(1+ha(max))*100));
+  const tp=totalPortLand();
+  $('#landrows').innerHTML = rows.map(([k,q,sub,col])=>`<div class="lr"><div class="lt"><span class="k">${k}</span><span class="v">${fmtHa(q.p50)} <small>ha</small></span></div>
+    <div class="rng"><span style="left:${sc(q.p10)}%; width:${Math.max(1,sc(q.p90)-sc(q.p10))}%; background:${col}; opacity:.35"></span><i style="left:${sc(q.p50)}%"></i></div>
+    <div class="sub">P10–P90 ${fmtHa(q.p10)}–${fmtHa(q.p90)} ha${k!=='+ renewables outside the fence' && tp>0?` · ${fmt(ha(q.p50)/tp*100,1)}% of all port land`:''} · ${sub}</div></div>`).join('')
+    + `<div class="foot">Log-scaled bars · ${mc.n} draws, seed ${MODEL.mc.seed}</div>`;
+  const pot=+state.port.potential||0, [s1,t1]=fitStatus(mc.fence, pot*1e4), [s2,t2]=fitStatus(mc.zone, pot*1e4);
+  $('#fit').innerHTML = `<table><tr><td>Potential-use land (${esc(state.port.name||'port')})</td><td class="r">${fmt(pot)} ha</td></tr>
+    <tr><td>Inside the fence vs potential use</td><td class="r">${fmt(pot>0?ha(mc.fence.p50)/pot*100:0)}%</td></tr>
+    <tr><td>With safety zones vs potential use</td><td class="r">${fmt(pot>0?ha(mc.zone.p50)/pot*100:0)}%</td></tr></table>
+    <div><span class="status ${s1}">Fence: ${t1}</span> <span class="status ${s2}">With zones: ${t2}</span></div>`;
+  // stack by function across fuels
+  const byFn={}; Object.values(res.fuels).forEach(r=>r.fac.forEach(q=>byFn[q.fn]=(byFn[q.fn]||0)+q.land));
+  const tot=Object.values(byFn).reduce((a,b)=>a+b,0)||1;
+  $('#stack').innerHTML=Object.entries(byFn).filter(([,v])=>v>0).map(([fn,v])=>`<span style="width:${v/tot*100}%; background:${FNCOL[fn]}" title="${fn}"></span>`).join('');
+  $('#legend').innerHTML=Object.entries(byFn).filter(([,v])=>v>0).map(([fn,v])=>`<span><i style="background:${FNCOL[fn]}"></i>${fn} ${fmt(v/tot*100)}%</span>`).join('');
+  const sumCtx=n=>Object.values(res.fuels).reduce((a,r)=>a+(r.ctx[n]||0),0);
+  const k=[['Electrolysers', sumCtx('MW')? fmt(sumCtx('MW'))+' MW':'—'], ['Cargo berths', sumCtx('berthsN')? fmt(sumCtx('berthsN')):'—'], ['Quay length', sumCtx('quayM')? fmt(sumCtx('quayM'))+' m':'—'], ['Storage tanks', sumCtx('tanks')? fmt(sumCtx('tanks')):'—'],
+           ['Bunker vessels', sumCtx('bv')? fmt(sumCtx('bv')):'—'], ['Trucks per day', (sumCtx('trucksIn')+sumCtx('trucksOut')+sumCtx('trucksD'))>0? fmt(sumCtx('trucksIn')+sumCtx('trucksOut')+sumCtx('trucksD'),1):'—'],
+           ['Trains per week', (sumCtx('trainsIn')+sumCtx('trainsD'))>0? fmt((sumCtx('trainsIn')+sumCtx('trainsD'))*7,1):'—'],
+           ['Ship and barge calls per year', (sumCtx('hrsIn')+sumCtx('hrsOut'))>0? fmt(sumCtx('callsInD')+sumCtx('callsInS')+sumCtx('callsInB')+sumCtx('callsOutD')+sumCtx('callsOutS')):'—']];
+  $('#kpis').innerHTML=k.map(([a,b])=>`<div class="kpi"><div class="k">${a}</div><div class="v">${b}</div></div>`).join('');
+  let rowsH='';
+  Object.values(res.fuels).forEach(r=>{ rowsH+=`<tr><td colspan="3" style="color:${FUELS[r.f].color}; font-weight:600">${FUELS[r.f].name} · P50 inside fence ${fmtHa(mc.perFuel[r.f]?mc.perFuel[r.f].p50:r.fence)} ha</td></tr>`;
+    rowsH+=r.fac.map(q=>`<tr><td><span class="mono" style="color:var(--muted)">${q.code}</span> ${esc(q.name)}</td><td class="r">${fmt(ha(q.land),2)}</td><td class="r">${q.zone>0?fmt(ha(q.zone),2):''}</td></tr>`).join(''); });
+  $('#factable tbody').innerHTML = rowsH + `<tr><td>× roads and utilities</td><td class="r">× ${fmt(pvGet('layout'),2)}</td><td></td></tr>`;
+}
+
+/* 0 overview */
+function renderOverview(res, mc){
+  const act=activeFuels();
+  $('#ovChains').innerHTML = act.length ? act.map(f=>chainHTML(f, res.fuels[f])).join('') : '<div class="note">Set a fuel demand in module 2 to see the configuration.</div>';
+  const pot=+state.port.potential||0, [s2,t2]=fitStatus(mc.zone, pot*1e4);
+  $('#ovResults').innerHTML = `<div class="row"><div class="k">${esc(state.port.name||'Port')}${state.port.loc?' · '+esc(state.port.loc):''}</div></div>
+    <div class="row"><div class="k">Inside the port fence</div><div class="v">${fmtHa(mc.fence.p50)} <small>ha · P10–P90 ${fmtHa(mc.fence.p10)}–${fmtHa(mc.fence.p90)}</small></div></div>
+    <div class="row"><div class="k">+ safety zones</div><div class="v">${fmtHa(mc.zone.p50)} <small>ha</small></div></div>
+    <div class="row"><div class="k">+ renewables outside the fence</div><div class="v">${fmtHa(mc.all.p50)} <small>ha</small></div></div>
+    <span class="status ${s2}">${t2}</span>
+    <div class="foot">Against ${fmt(pot)} ha of potential-use land. Details in module 5.</div>`;
+}
+
+/* 6 configuration change */
+function snapshot(res){
+  const t=String.fromCharCode(65 + state.saved.length % 26);
+  const label = activeFuels().map(f=>`${FUELS[f].sym} ${state.cfg[f].preset||'custom'}`).join(' + ') || 'no fuel';
+  const fac=[]; Object.values(res.fuels).forEach(r=>r.fac.forEach(q=>fac.push({id:r.f+':'+q.id, fuel:r.f, code:q.code, name:q.name, land:q.land})));
+  return {tag:t, label, fence:res.fence, zones:res.zones, fac};
+}
+function renderSaved(){
+  $('#savedList').innerHTML = state.saved.map(s=>`<div class="saved"><span class="tag">${s.tag}</span><span>${esc(s.label)}</span><span class="sz">${fmtHa(s.fence)} ha</span></div>`).join('');
+  if(state.saved.length<2){ $('#cmpArea').innerHTML = state.saved.length? '<div class="foot">Save a second configuration to compare.</div>' : ''; return; }
+  const opts=sel=>state.saved.map(s=>`<option value="${s.tag}" ${sel===s.tag?'selected':''}>${s.tag} — ${esc(s.label)}</option>`).join('');
+  const A=state.saved.find(s=>s.tag===state.cmpA)||state.saved[0], B=state.saved.find(s=>s.tag===state.cmpB)||state.saved[state.saved.length-1];
+  const ids=[...new Set([...A.fac.map(f=>f.id), ...B.fac.map(f=>f.id)])];
+  const rows=ids.map(id=>{ const a=A.fac.find(f=>f.id===id), b=B.fac.find(f=>f.id===id); let st,cls,d;
+    if(a&&!b){ st='Stranded or removed'; cls='rem'; d=-a.land; } else if(!a&&b){ st='Added'; cls='add'; d=b.land; }
+    else { d=b.land-a.land; const rel=a.land>0? d/a.land : (d?1:0); st=Math.abs(rel)<.05?'Kept / shared': d>0?'Expanded':'Reduced'; cls=st==='Kept / shared'?'same':'exp'; }
+    const q=a||b; return `<tr><td><span style="color:${FUELS[q.fuel].color}">${FUELS[q.fuel].sym}</span> <span class="mono" style="color:var(--muted)">${q.code}</span> ${esc(q.name)}</td><td><span class="st ${cls}">${st}</span></td><td class="r">${d>=0?'+':''}${fmt(ha(d),2)}</td></tr>`; }).join('');
+  $('#cmpArea').innerHTML = `<div class="cmpsel"><select id="cmpA" aria-label="From">${opts(A.tag)}</select><span>to</span><select id="cmpB" aria-label="To">${opts(B.tag)}</select></div>
+    <table class="tbl"><thead><tr><th>Facility</th><th>Change</th><th class="r">Δ land (ha)</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="foot">Δ inside the fence: ${(B.fence-A.fence)>=0?'+':''}${fmt(ha(B.fence-A.fence),1)} ha · Δ safety zones: ${(B.zones-A.zones)>=0?'+':''}${fmt(ha(B.zones-A.zones),1)} ha</div>`;
+  $('#cmpA').onchange=e=>{ state.cmpA=e.target.value; renderSaved(); }; $('#cmpB').onchange=e=>{ state.cmpB=e.target.value; renderSaved(); };
+}
+
+/* references, reality check */
+const ANCHORS = [
+ {src:'[22]', nm:'Kassø e-methanol (inland plant), 42 kt/yr', val:'≈ 2.6 ha', pair:'SRC.6 + SNK.5', chain:'FEED.PWR + FEED.H2O + FEED.CO2 (biogenic point source) + IN.3 + CNV.1 + STO.1 + OUT.3 (truck)',
+  note:'Inland site, not a port; plant fence only.', load:{fuel:'MeOH', D:42000, src:{'SRC.6':1}, snk:{'SNK.5':1}, sto:'STO.1', disp:'truck', co2:'point'}},
+ {src:'[23]', nm:'Port of Vancouver e-methanol (study), 200 kt/yr', val:'28–34 ha (≈ 90% DAC)', pair:'SRC.6 + SNK.4', chain:'FEED.PWR + FEED.H2O + FEED.CO2 (DAC) + IN.3 + CNV.1 + STO.1 + OUT.2a + RET.VAP',
+  note:'Bunkering outlet as interpreted.', load:{fuel:'MeOH', D:200000, src:{'SRC.6':1}, snk:{'SNK.4':1}, sto:'STO.1', bunk:'OUT.2a', co2:'dac'}},
+ {src:'[24]', nm:'HØST PtX Esbjerg, 1 GW → ≈ 600 kt NH₃/yr', val:'≈ 30 ha', pair:'SRC.6 + SNK.1', chain:'FEED.PWR + FEED.H2O + FEED.N2 + IN.3 + CNV.1 + STO.1 + OUT.1 + RET.BOG + RET.VAP',
+  note:'Export outlet assumed; the project also targets domestic fertiliser use.', load:{fuel:'NH3', D:600000, src:{'SRC.6':1}, snk:{'SNK.1':1}, sto:'STO.1'}},
+ {src:'[25]', nm:'Madoqua Sines, 0.5 GW → 300 kt NH₃/yr', val:'≈ 60 ha reserved', pair:'SRC.6 + SNK.1', chain:'FEED.PWR + FEED.H2O + FEED.N2 + IN.3 + CNV.1 + STO.1 + OUT.1 + RET.BOG + RET.VAP',
+  note:'Reserved plot, not built footprint.', load:{fuel:'NH3', D:300000, src:{'SRC.6':1}, snk:{'SNK.1':1}, sto:'STO.1'}},
+ {src:'[13]', nm:'Ammonia cracker, 1 Mt H₂/yr (Fluor 2023)', val:'20–45 ha (cracker incl. storage)', pair:'SRC.1 + SNK.5', chain:'IN.1 + CNV.3 + STO.1 + OUT.3 (pipeline) + RET.BOG + RET.VAP',
+  note:'Reference covers the cracker and storage only; the model adds berths and dispatch.', load:{fuel:'NH3', D:6684000, src:{'SRC.1':1}, snk:{'SNK.5':1}, sto:'STO.1', disp:'pipe', crack:1}},
+ {src:'[26]', nm:'Gothenburg import hub vs production hub (Neidert 2026)', val:'< 5% vs 9–42% of 1,030 ha', pair:'SRC.1 + SNK.4 | SRC.6 + SNK.4',
+  chain:'Import: IN.1 + CNV.0 + STO.1 + OUT.2a + RET.VAP | Production: FEED.PWR + FEED.H2O + FEED.CO2 + IN.3 + CNV.1 + STO.1 + OUT.2a + RET.VAP', note:'Demand not entered here; compare with your own demand.'},
+ {src:'[27]', nm:'DNV Chile NH₃ export terminal only', val:'49 ha', pair:'SRC.4 + SNK.1', chain:'IN.2a + CNV.0 + STO.1 + OUT.1 + RET.BOG + RET.VAP',
+  note:'Pipeline-fed from inland production as interpreted; production excluded; throughput not stated.'}
+];
+const REFLIST = [{"t": "Li, X. (2026). Supply chain configuration framework for hydrogen and e-fuels at ports: Supply_chain_dynamics_mapped_with_fuel_cleaned.xlsx (Layers 1–4, option ratings, source options SRC.1–SRC.6). Designed by the author; unpublished workbook, Chalmers University of Technology.", "u": ""}, {"t": "Li, X. (2026). Supply_chain_compositions_by_fuel.xlsx (reference configurations, evidence). Designed by the author; unpublished workbook, Chalmers University of Technology.", "u": ""}, {"t": "IRENA (2020). Green Hydrogen Cost Reduction: Scaling up Electrolysers to Meet the 1.5°C Climate Goal.", "u": "https://www.irena.org/publications/2020/Dec/Green-hydrogen-cost-reduction"}, {"t": "ISPT (2020). Gigawatt green hydrogen plant: state-of-the-art design and total installed capital costs (8–17 ha per GW incl. balance of plant).", "u": "https://ispt.eu/media/ISPT-public-report-gigawatt-green-hydrogen-plant.pdf"}, {"t": "IRENA & Bluerisk (2023). Water for hydrogen production. Water supply and treatment are part of the electrolyser BoP.", "u": "https://www.irena.org/Publications/2023/Dec/Water-for-hydrogen-production"}, {"t": "Einav, R., Harussi, K., Perry, D. (2002). The footprint of the desalination processes on the environment. Desalination 152, 141–154.", "u": "https://doi.org/10.1016/S0011-9164(02)01057-3"}, {"t": "IRENA & Methanol Institute (2021). Innovation Outlook: Renewable Methanol.", "u": "https://www.irena.org/publications/2021/Jan/Innovation-Outlook-Renewable-Methanol"}, {"t": "IRENA & AEA (2022). Innovation Outlook: Renewable Ammonia.", "u": "https://www.irena.org/publications/2022/May/Innovation-Outlook-Renewable-Ammonia"}, {"t": "IEA (2022). Direct Air Capture 2022: A key technology for net zero.", "u": "https://www.iea.org/reports/direct-air-capture-2022"}, {"t": "Lebling, K. et al. (2022). Direct Air Capture: Assessing Impacts to Enable Responsible Scaling. World Resources Institute.", "u": "https://www.wri.org/research/direct-air-capture-impacts"}, {"t": "Viebahn, P., Scholz, A., Zelt, O. (2019). The Potential Role of Direct Air Capture in the German Energy Research Program. Energies 12(18), 3443.", "u": "https://doi.org/10.3390/en12183443"}, {"t": "Zhang, T. et al. (2023). Hydrogen liquefaction and storage: Recent progress and perspectives. Renewable and Sustainable Energy Reviews 176, 113204.", "u": "https://doi.org/10.1016/j.rser.2023.113204"}, {"t": "Fluor (2023). Large-Scale Industrial Ammonia Cracking Plant: executive summary for the Port of Rotterdam Authority and partners.", "u": "https://www.portofrotterdam.com/sites/default/files/2023-05/large-scale-industrial-ammonia-cracking-plant.pdf"}, {"t": "Van Koningsveld, M., Verheij, H.J., Taneja, P., de Vriend, H.J. (2021). Ports and Waterways: Navigating the changing world. TU Delft OPEN.", "u": "https://doi.org/10.5074/T.2021.004"}, {"t": "Ligteringen, H. (2017). Ports and Terminals. Delft Academic Press; open edition TU Delft OPEN (2022).", "u": "https://doi.org/10.5074/T.2021.005"}, {"t": "NFPA 30: Flammable and Combustible Liquids Code (tank spacing).", "u": "https://www.nfpa.org/codes-and-standards/nfpa-30-standard-development/30"}, {"t": "HSE (2015). HSG176 The storage of flammable liquids in tanks (bunds).", "u": "https://www.hse.gov.uk/pubns/books/hsg176.htm"}, {"t": "TNO (2020). TNO 2020 R10239: e-fuels in the Rotterdam harbour 2050 (offshore wind 4–6 MW/km²).", "u": "https://publications.tno.nl/publication/34643364/tNZFIERL/TNO-2020-R10239.pdf"}, {"t": "Denholm, P. et al. (2009). Land-Use Requirements of Modern Wind Power Plants in the United States. NREL.", "u": "https://www.osti.gov/biblio/964608"}, {"t": "Ong, S. et al. (2013). Land-Use Requirements for Solar Power Plants in the United States. NREL.", "u": "https://www.osti.gov/servlets/purl/1086349"}, {"t": "Van Kranenburg, K. et al. (2020). E-fuels: towards a more sustainable future for truck transport, shipping and aviation. TNO, VoltaChem, SmartPort (e-methanol synthesis plot).", "u": "https://www.tno.nl/publish/pages/3735/vankranenburg-2020-efuels.pdf"}, {"t": "State of Green (2023). The world’s biggest commercial e-methanol plant: European Energy, Kassø (42,000 t/yr; plot area from the author’s footprint database).", "u": "https://stateofgreen.com/en/solutions/the-worlds-biggest-commercial-e-methanol-plan/"}, {"t": "Oceans North & Arup (2025). Port of Vancouver E-Methanol Study: discussion paper.", "u": "https://oceansnorth.org/wp-content/uploads/2025/11/251119-Port-of-Vancouver-Green-Fuels-Study_vF.pdf"}, {"t": "NS Energy. HØST PtX Esbjerg Project, Denmark (site of about 30 ha).", "u": "https://www.nsenergybusiness.com/projects/host-ptx-esbjerg-project-denmark/"}, {"t": "AICEP Portugal Global (2024). MadoquaPower2X: land lease agreements for 60 ha in the Sines industrial zone.", "u": "https://www.portugalglobal.pt/en/news/2024/april/madoquapower2x-demonstrates-its-continued-commitment-to-portugal/"}, {"t": "Neidert, A. (2026). Spatial feasibility and infrastructure requirements for E-fuel supply chains in ports. Master’s thesis, Sustainable Energy Systems (MPSES), Chalmers University of Technology.", "u": "https://hdl.handle.net/20.500.12380/312507"}, {"t": "DNV (2022). Hydrogen export terminals in Chile. Report published by the Ministry of Energy of Chile; source of the 49 ha ammonia export terminal estimate (terminal only). The link is no longer active; the author holds an offline copy.", "u": "https://energia.gob.cl/sites/default/files/2022_-_dnv_-_hydrogen_export_terminals_in_chile.pdf"}];
+function renderStatic(){
+  $('#refsBody').innerHTML = `<p><b>Framework.</b> The supply chain configuration framework and reference configurations were designed by the author [1, 2]. Sizing parameters come from the sources below; the Reality-check cases are [13, 22–27].</p>
+    <ol>${REFLIST.map(r=>`<li>${esc(r.t)}${r.u?` <a href="${r.u}" target="_blank" rel="noopener">${esc(r.u)}</a>`:''}</li>`).join('')}</ol>
+    <p>Safety distances are illustrative only; replace them with quantitative risk assessment or national land-use planning rules before drawing conclusions.</p>
+    <p>Parameters marked “data gap” are placeholders. Monte Carlo draws use a triangular distribution between the low value, the slider value and the high value, with a fixed seed.</p>`;
+}
+function renderAnchors(){
+  $('#anchors').innerHTML = ANCHORS.map((a,i)=>`<div class="anchor"><span class="nm">${a.nm}</span><span class="val">${a.val}</span>
+    <div class="cfgl"><b>${a.pair}</b> · ${a.chain}</div><div class="an">${a.note} <span class="srcref">Source ${a.src||''}</span>${a.load?` <button class="btn ghost small" type="button" data-anchor="${i}">Load into the model</button>`:''}</div>
+    ${state.anchorLoaded===i && state.mc ? `<div class="model">Model with this configuration: ${fmtHa(state.mc.fence.p50)} ha inside the fence (P10–P90 ${fmtHa(state.mc.fence.p10)}–${fmtHa(state.mc.fence.p90)}), ${fmtHa(state.mc.zone.p50)} ha with safety zones · reported ${a.val}</div>`:''}</div>`).join('');
+  $$('#anchors [data-anchor]').forEach(b=>b.onclick=()=>loadAnchor(+b.dataset.anchor));
+}
+function loadAnchor(i){
+  const a=ANCHORS[i].load; if(!a) return;
+  state.demand.mode='direct'; FKEYS.forEach(f=>state.demand.direct[f]=0); state.demand.direct[a.fuel]=a.D;
+  const c=state.cfg[a.fuel]; c.preset=null; c.src={}; SRC.forEach(x=>c.src[x.c]=0); Object.assign(c.src,a.src); c.snk={}; SNK.forEach(x=>c.snk[x.c]=0); Object.assign(c.snk,a.snk);
+  c.sto=a.sto||'STO.1'; if(a.bunk) c.bunk=a.bunk; if(a.disp) c.disp=a.disp; if(a.co2) c.co2=a.co2; if(a.crack!=null) c.crack=a.crack;
+  state.tab=a.fuel; state.anchorLoaded=i; setFuelColour(); renderDemand(); renderConfig(); refresh('all');
+}
+
+/* =====================================================================
+   10. DESIGNER MODE
+   ===================================================================== */
+const VARS_DOC = [
+ ['D','annual demand of the fuel (t/yr)'],['Mprod','on-site production (t/yr) = D × SRC.6 share'],['MH2','hydrogen needed for production (t/yr)'],['Mco2, Mn2','CO₂ and N₂ needed (t/yr)'],
+ ['conv2, conv3','flow needing conditioning (gas → liquid/carrier) and reconversion (t/yr)'],['MinDeep, MinShort, MinBarge','waterborne inflow by class: deep-sea (SRC.1), short-sea (SRC.2), inland barge (SRC.3) (t/yr)'],['callsInD/S/B, hrsInD/S/B, callsOutD/S, hrsOutD/S','calls and berth hours per class (common definitions)'],['Mpipe, Mover','pipeline and overland tanker inflow (t/yr)'],
+ ['MoutDeep, MoutShort','export + re-export; coastwise outflow (t/yr)'],['Mbunk, Mdisp','bunkering; hinterland + local outflow (t/yr)'],
+ ['fuelH2, fuelMeOH, fuelNH3','1 for the fuel being sized'],['stoDirect, stoOne, stoTwo, stoFloat','storage option flags'],['isSTS, isTTS, isPTS, isSwap','bunkering mode flags'],
+ ['dispPipe, dispRail, dispTruck','dispatch mode flags'],['carrierLH2, carrierLOHC','hydrogen carrier flags'],['co2DAC, co2Point, co2Import','CO₂ source flags'],
+ ['elyPlant','1 if the electrolyser footprint is plant level (incl. BoP)'],['allGas','1 if a hydrogen chain is gaseous end to end'],['directTTS','1 if trucks deliver straight to ships'],
+ ['rail, crack','rail share of overland supply; cracked share'],['sharedBerth','1 to size import and export on shared berths'],
+ ['landSum, zoneSum, elecSum','running totals of earlier rules'],['MW, tanks, berthsN, quayM, bv, trucksIn, trucksOut, trucksD, trainsIn, trainsD','KPI variables set by rules']
+];
+function dmsg(text, ok){ $('#dmsg').innerHTML = text ? `<div class="${ok?'okmsg':'err'}">${text}</div>` : ''; }
+function renderDesigner(){
+  const tabs=[['params','Parameters'],['common','Common definitions'],['rules','Facility rules'],['totals','Totals'],['settings','Monte Carlo'],['io','Import / export'],['vars','Variables']];
+  $('#dtabs').innerHTML=tabs.map(([k,l])=>`<button type="button" data-dt="${k}" class="${state.dtab===k?'on':''}">${l}</button>`).join('');
+  $$('#dtabs [data-dt]').forEach(b=>b.onclick=()=>{ state.dtab=b.dataset.dt; renderDesigner(); });
+  const t=state.dtab; let h='';
+  if(t==='params'){
+    h+=`<div class="dscroll"><table class="ptab"><thead><tr><th>Key</th><th>Label</th><th>Unit</th><th>Step</th><th>Scope</th><th colspan="3">All / H₂: central · low · high</th><th colspan="3">MeOH</th><th colspan="3">NH₃</th><th>Source</th><th>Gap</th><th></th></tr></thead><tbody>`;
+    Object.entries(MODEL.params).forEach(([k,d])=>{
+      const scope = d.all?'all' : d.byFuel?'fuel' : 'res';
+      const trip=(arr,f)=>arr.map((v,i)=>`<td><input type="number" step="any" value="${v}" data-pk="${k}" data-f="${f}" data-i="${i}"></td>`).join('');
+      let vals='';
+      if(scope==='all') vals = trip(d.all,'all') + '<td colspan="6" style="color:var(--muted)">same for all fuels</td>';
+      else if(scope==='fuel') vals = trip(d.byFuel.H2,'H2') + trip(d.byFuel.MeOH,'MeOH') + trip(d.byFuel.NH3,'NH3');
+      else vals = `<td colspan="9" style="color:var(--muted)">by renewable type: ${Object.entries(d.byType).map(([r,a])=>`${r} ${a.join(' · ')}`).join(' | ')} (edit via Import / export)</td>`;
+      h+=`<tr><td><span class="mono">${k}</span></td><td><input class="w" value="${esc(d.t)}" data-meta="${k}" data-m="t"></td><td><input value="${esc(d.u)}" data-meta="${k}" data-m="u"></td>
+        <td><input type="number" step="any" value="${d.step||1}" data-meta="${k}" data-m="step"></td><td>${scope}</td>${vals}
+        <td><input class="w" value="${esc(d.src||'')}" data-meta="${k}" data-m="src"></td><td><input type="checkbox" ${d.gap?'checked':''} data-meta="${k}" data-m="gap"></td>
+        <td><button class="btn ghost small" type="button" data-pdel="${k}">Delete</button></td></tr>`;
+    });
+    h+=`</tbody></table></div>
+      <div class="subh">Add a parameter</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center"><input id="npKey" placeholder="key (letters, digits, _)" style="padding:5px 7px; border:1px solid var(--line); border-radius:4px; background:var(--surface2)">
+      <input id="npLabel" placeholder="label" style="padding:5px 7px; border:1px solid var(--line); border-radius:4px; background:var(--surface2)">
+      <input id="npUnit" placeholder="unit" style="width:90px; padding:5px 7px; border:1px solid var(--line); border-radius:4px; background:var(--surface2)">
+      <select id="npScope" style="padding:5px 7px; border:1px solid var(--line); border-radius:4px; background:var(--surface2)"><option value="all">same for all fuels</option><option value="fuel">per fuel</option></select>
+      <button class="btn small" type="button" id="npAdd">Add</button></div>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap"><button class="btn" type="button" id="pApply">Apply and save</button><button class="btn ghost" type="button" id="pResetPV">Reset sliders to central values</button></div>`;
+  } else if(t==='common'){
+    h+=`<p class="note" style="margin-top:0">Shared variables used by several rules. One “name = expression” per line, evaluated top to bottom; lines starting with # are comments.</p>
+      <textarea class="code" id="commonTxt" rows="14">${esc(MODEL.common)}</textarea><div style="margin-top:8px"><button class="btn" type="button" id="cApply">Check, apply and save</button></div>`;
+  } else if(t==='totals'){
+    h+=`<p class="note" style="margin-top:0">Turns rule totals into the three boundaries. The results read fence, zones and outside.</p>
+      <textarea class="code" id="totalsTxt" rows="8">${esc(MODEL.totals)}</textarea><div style="margin-top:8px"><button class="btn" type="button" id="tApply">Check, apply and save</button></div>`;
+  } else if(t==='rules'){
+    h+=`<p class="note" style="margin-top:0">Rules run in order for each fuel. A rule adds a facility when “when” is non-zero. Definitions may use parameters, flows, flags and variables from earlier rules. Land and zone are in m², electricity in MWh/yr. In captions, {name:1} prints a variable with one decimal.</p>`;
+    MODEL.rules.forEach((r,i)=>{
+      h+=`<div class="rulecard" data-ri="${i}"><div class="rh"><b>${esc(r.id)}</b><span class="mono" style="color:var(--muted)">${esc(r.code)}</span><span>${esc(r.name)}</span>
+        <span style="margin-left:auto; display:flex; gap:4px"><button class="btn ghost small" type="button" data-rmove="${i}" data-d="-1">↑</button><button class="btn ghost small" type="button" data-rmove="${i}" data-d="1">↓</button><button class="btn ghost small" type="button" data-rdel="${i}">Delete</button></span></div>
+        <div class="rgrid">${[['id','Id'],['fn','Group (SRC, FEED, TRF-IN, CNV, STO, TRF-OUT, RET)'],['code','Layer 3 code'],['name','Facility name'],['when','When (condition)'],['land','Land (m²)'],['zone','Safety zone (m²)'],['elec','Electricity (MWh/yr)'],['cap','Caption'],['water','Water-area note'],['keys','Parameters shown (comma-separated)'],['note','Note']]
+          .map(([k,l])=>`<div><label>${l}</label><input data-rf="${k}" value="${esc(r[k]||'')}"></div>`).join('')}</div>
+        <label style="margin-top:6px">Definitions (one “name = expression” per line)</label><textarea class="code" data-rf="defs" rows="${Math.max(2,(r.defs||'').split('\n').length+1)}">${esc(r.defs||'')}</textarea>
+        <label>Equation text shown to users</label><textarea class="code" data-rf="eq" rows="3">${esc(r.eq||'')}</textarea></div>`;
+    });
+    h+=`<div style="display:flex; gap:8px; flex-wrap:wrap"><button class="btn ghost" type="button" id="rAdd">Add rule</button><button class="btn" type="button" id="rApply">Check, apply and save</button></div>`;
+  } else if(t==='settings'){
+    h+=`<div class="grid2"><div class="field"><label for="mcN">Monte Carlo draws</label><input type="number" id="mcN" min="50" max="5000" step="50" value="${MODEL.mc.draws}"><div class="hint">More draws give steadier percentiles but slow the page</div></div>
+      <div class="field"><label for="mcSeed">Random seed</label><input type="number" id="mcSeed" step="1" value="${MODEL.mc.seed}"><div class="hint">Same seed and inputs give the same result</div></div></div>
+      <div style="margin-top:8px"><button class="btn" type="button" id="sApply">Apply and save</button></div>`;
+  } else if(t==='io'){
+    h+=`<p class="note" style="margin-top:0">Copy the JSON to keep or share the model, or paste a model and load it. Paste it into DEFAULT_PARAMS, DEFAULT_COMMON, DEFAULT_RULES and DEFAULT_TOTALS in the source to make it the built-in model.</p>
+      <textarea class="code" id="ioTxt" rows="14">${esc(JSON.stringify(MODEL, null, 1))}</textarea>
+      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap"><button class="btn ghost" type="button" id="ioCopy">Copy</button><button class="btn" type="button" id="ioLoad">Load pasted model</button><button class="btn ghost" type="button" id="ioReset">Restore built-in model</button></div>`;
+  } else {
+    h+=`<div class="varlist">${VARS_DOC.map(([n,d])=>`<div><code>${n}</code> — ${d}</div>`).join('')}</div>
+      <p class="note">Every parameter key is also a variable (value for the fuel being sized). Functions: if(c, a, b), max, min, ceil, floor, round, sqrt, abs, log10, ln, exp; constant pi; operators + − * / ^ < > <= >= == != && || !.</p>`;
+  }
+  $('#dbody').innerHTML=h; bindDesigner();
+}
+function recompile(){
+  const {c, errors}=compileModel(MODEL);
+  if(errors.length){ dmsg('Not applied: '+errors.map(esc).join(' · '), false); return false; }
+  COMPILED={c, errors}; const saved=saveModel(); dmsg(saved? 'Applied and saved in this browser.' : 'Applied (browser storage unavailable, so it will not be kept).', true);
+  renderConfig(); refresh('all'); return true;
+}
+function bindDesigner(){
+  $$('#dbody [data-pk]').forEach(inp=>inp.onchange=()=>{ const d=MODEL.params[inp.dataset.pk], i=+inp.dataset.i, v=+inp.value;
+    if(inp.dataset.f==='all') d.all[i]=v; else d.byFuel[inp.dataset.f][i]=v; });
+  $$('#dbody [data-meta]').forEach(inp=>inp.onchange=()=>{ const d=MODEL.params[inp.dataset.meta], m=inp.dataset.m; d[m] = m==='gap'? inp.checked : m==='step'? +inp.value : inp.value; });
+  $$('#dbody [data-pdel]').forEach(b=>b.onclick=()=>{ delete MODEL.params[b.dataset.pdel]; renderDesigner(); });
+  const add=$('#npAdd'); if(add) add.onclick=()=>{ const k=$('#npKey').value.trim(); if(!/^[A-Za-z_]\w*$/.test(k) || MODEL.params[k]){ dmsg('Choose a new key made of letters, digits and _.', false); return; }
+    MODEL.params[k] = $('#npScope').value==='all' ? {t:$('#npLabel').value||k, u:$('#npUnit').value, step:1, src:'', all:[1,1,1]} : {t:$('#npLabel').value||k, u:$('#npUnit').value, step:1, src:'', byFuel:{H2:[1,1,1],MeOH:[1,1,1],NH3:[1,1,1]}};
+    renderDesigner(); dmsg(`Added ${k}. Set its values, then apply.`, true); };
+  const pa=$('#pApply'); if(pa) pa.onclick=()=>{ for(const k in MODEL.params){ if(state.pv[k]===undefined){ if(isFuelParam(k)){ state.pv[k]={}; FKEYS.forEach(f=>state.pv[k][f]=pdRange(k,f)[0]); } else state.pv[k]=pdRange(k)[0]; } } recompile(); };
+  const pr=$('#pResetPV'); if(pr) pr.onclick=()=>{ resetPV(); refresh('all'); renderConfig(); dmsg('Sliders reset to central values.', true); };
+  const ca=$('#cApply'); if(ca) ca.onclick=()=>{ MODEL.common=$('#commonTxt').value; recompile(); };
+  const ta=$('#tApply'); if(ta) ta.onclick=()=>{ MODEL.totals=$('#totalsTxt').value; recompile(); };
+  $$('#dbody .rulecard').forEach(card=>{ const i=+card.dataset.ri; $$(`.rulecard[data-ri="${i}"] [data-rf]`).forEach(inp=>inp.onchange=()=>{ MODEL.rules[i][inp.dataset.rf]=inp.value; }); });
+  $$('#dbody [data-rmove]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.rmove, j=i+(+b.dataset.d); if(j<0||j>=MODEL.rules.length) return; const r=MODEL.rules; [r[i],r[j]]=[r[j],r[i]]; renderDesigner(); });
+  $$('#dbody [data-rdel]').forEach(b=>b.onclick=()=>{ MODEL.rules.splice(+b.dataset.rdel,1); renderDesigner(); dmsg('Rule removed. Apply to use the change.', true); });
+  const ra=$('#rAdd'); if(ra) ra.onclick=()=>{ MODEL.rules.push(R_({id:'new'+MODEL.rules.length, fn:'STO', code:'STO.1', name:'New facility', when:'0'})); renderDesigner(); };
+  const rp=$('#rApply'); if(rp) rp.onclick=()=>recompile();
+  const sa=$('#sApply'); if(sa) sa.onclick=()=>{ MODEL.mc.draws=Math.max(50,Math.min(5000,+$('#mcN').value||400)); MODEL.mc.seed=(+$('#mcSeed').value|0); recompile(); };
+  const ic=$('#ioCopy'); if(ic) ic.onclick=()=>{ const ta=$('#ioTxt'); ta.select(); try{ navigator.clipboard.writeText(ta.value).then(()=>dmsg('Copied.', true), ()=>dmsg('Text selected; copy it with Ctrl/Cmd + C.', true)); } catch(e){ dmsg('Text selected; copy it with Ctrl/Cmd + C.', true); } };
+  const il=$('#ioLoad'); if(il) il.onclick=()=>{ try{ const m=JSON.parse($('#ioTxt').value); if(!m.params||!m.rules) throw new Error('missing params or rules');
+      const keep=MODEL; MODEL=Object.assign(defaultModel(), m, {version:MODEL_VERSION}); if(!recompile()) MODEL=keep; else { resetPV(); renderDesigner(); } } catch(e){ dmsg('Could not read the model: '+esc(e.message), false); } };
+  const ir=$('#ioReset'); if(ir) ir.onclick=()=>{ MODEL=defaultModel(); try{ localStorage.removeItem(LS_KEY); } catch(e){} COMPILED=compileModel(MODEL); resetPV(); renderConfig(); refresh('all'); renderDesigner(); dmsg('Built-in model restored.', true); };
+}
+
+
+/* =====================================================================
+   12. BETA: tester tasks, feedback, Designer visibility
+   ===================================================================== */
+const TASKS = [
+ {id:'t1', t:'Task 1 · Reproduce the tutorial', tm:'about 5 minutes', steps:[
+   'Module 1: name the port “Tutorial port” with 800 ha used, 100 ha committed and 130 ha potential use.',
+   'Module 2: keep “Shares of annual fuel use” at 10 PJ/yr; untick hydrogen; set e-methanol 30% and e-ammonia 15%.',
+   'Module 3: choose M1 on the e-Methanol tab and A2 on the e-Ammonia tab. Module 5 should show about 10 ha inside the fence and about 46 ha with safety zones.',
+   'Save the configuration in Module 6, switch e-methanol to M5, save again and compare the two.']},
+ {id:'t2', t:'Task 2 · Model a port you know', tm:'about 10 minutes', steps:[
+   'Enter its name, location and land in Module 1, and its expected fuel demand in Module 2 (shares or tonnes per year).',
+   'Pick the reference configurations closest to its plans in Module 3 and adjust shares if needed.',
+   'Read Module 5: does the configuration fit its potential-use land? Note any result that looks wrong to you.']},
+ {id:'t3', t:'Task 3 · Explore a sensitivity', tm:'about 5 minutes', steps:[
+   'In Module 4, open one facility row and move a parameter you know well (for example a safety distance, tank size or parcel size).',
+   'Watch how Module 5 and Module 0 change, and whether the warnings in Module 3 make sense.']}
+];
+const TASK_KEY='portfit_beta_tasks';
+function taskTicks(){ try{ return JSON.parse(localStorage.getItem(TASK_KEY)||'{}'); }catch(e){ return {}; } }
+function renderTasks(){
+  const ticks=taskTicks();
+  $('#taskList').innerHTML = TASKS.map(k=>`<div class="task"><h3>${k.t}<span class="tm">${k.tm}</span></h3><ol>${k.steps.map(x=>`<li>${x}</li>`).join('')}</ol>
+    <label class="done"><input type="checkbox" data-task="${k.id}" ${ticks[k.id]?'checked':''}> Done</label></div>`).join('');
+  $$('#taskList [data-task]').forEach(c=>c.onchange=()=>{ const t=taskTicks(); t[c.dataset.task]=c.checked; try{ localStorage.setItem(TASK_KEY, JSON.stringify(t)); }catch(e){} });
+}
+const SUS = ['I think that I would like to use this tool frequently.','I found the tool unnecessarily complex.','I thought the tool was easy to use.',
+ 'I think that I would need the support of a technical person to be able to use this tool.','I found the various functions in this tool were well integrated.',
+ 'I thought there was too much inconsistency in this tool.','I would imagine that most people would learn to use this tool very quickly.',
+ 'I found the tool very cumbersome to use.','I felt very confident using the tool.','I needed to learn a lot of things before I could get going with this tool.'];
+function renderFeedbackForm(){
+  $('#fbTasks').innerHTML = TASKS.map(k=>`<div style="margin:4px 0"><span style="font-size:13px">${k.t.split(' · ')[0]}</span>
+    <span class="radios" style="display:inline-flex; margin-left:10px">${['Yes','Partly','No','Not tried'].map(o=>`<label><input type="radio" name="fb_${k.id}" value="${o}"> ${o}</label>`).join('')}</span></div>`).join('');
+  $('#fbPlaus').innerHTML = [['1','Not at all'],['2',''],['3','Partly'],['4',''],['5','Very plausible'],['na','Can’t judge']].map(([v,l])=>`<label><input type="radio" name="fb_plaus" value="${v}"> ${v==='na'?l:v}${l&&v!=='na'?` <span style="color:var(--muted)">${l}</span>`:''}</label>`).join('');
+  $('#fbSus').innerHTML = `<tr><th>Statement</th>${[1,2,3,4,5].map(n=>`<th>${n}</th>`).join('')}</tr>` +
+    SUS.map((q,i)=>`<tr><td>${i+1}. ${q}</td>${[1,2,3,4,5].map(n=>`<td><input type="radio" name="sus${i}" value="${n}" aria-label="${n}"></td>`).join('')}</tr>`).join('');
+}
+const radioVal = name => { const r=document.querySelector(`input[name="${name}"]:checked`); return r? r.value : null; };
+function susScore(ans){ if(ans.some(a=>a==null)) return null; let s=0; ans.forEach((a,i)=>{ s += (i%2===0)? (a-1) : (5-a); }); return s*2.5; }
+function configSnapshot(){
+  const D=demands(), res=state.last, mc=state.mc;
+  const fuels = activeFuels().map(f=>{ const c=state.cfg[f], r=res&&res.fuels[f];
+    return {fuel:f, demand_t:Math.round(D[f]), preset:c.preset||'custom', src:norm(c.src), snk:norm(c.snk), sto:c.sto, bunk:c.bunk, disp:c.disp, carrier:c.carrier, crack:c.crack, co2:c.co2, railIn:c.railIn,
+            fence_ha: r? +(r.fence/1e4).toFixed(2) : null, facilities: r? r.fac.map(q=>q.code+' '+q.name) : []}; });
+  const changed={}; for(const k in MODEL.params){ for(const f of FKEYS){ const v=pvGet(k,f), d=pdRange(k,f)[0]; if(isFinite(v)&&isFinite(d)&&Math.abs(v-d)>1e-9){ changed[isFuelParam(k)?k+'.'+f:k]=v; } } }
+  return {port:{name:state.port.name, loc:state.port.loc, used:state.port.used, committed:state.port.committed, potential:state.port.potential, res:state.port.res},
+          demandMode:state.demand.mode, elyTech:state.elyTech, fuels, changedParams:changed,
+          results: mc? {fence_p50_ha:+(mc.fence.p50/1e4).toFixed(2), fence_p10_ha:+(mc.fence.p10/1e4).toFixed(2), fence_p90_ha:+(mc.fence.p90/1e4).toFixed(2),
+                        zones_p50_ha:+(mc.zone.p50/1e4).toFixed(2), renewables_p50_ha:+(mc.all.p50/1e4).toFixed(1)} : null};
+}
+let CAP = {db:null, user:null, uid:null, canEdit:false};
+function fbStatus(text){ $('#fbStatus').textContent = text; }
+async function sendFeedback(){
+  const msg=$('#fbMsg');
+  if(!CAP.db || !CAP.uid){ msg.textContent='Feedback can only be sent from claude.ai while signed in. Please send your answers to the developer by email instead.'; return; }
+  const sus=SUS.map((_,i)=>{ const v=radioVal('sus'+i); return v? +v : null; });
+  const entry = {at:new Date().toISOString(), version:'1.0-beta', role:$('#fbRole').value,
+    tasks:Object.fromEntries(TASKS.map(k=>[k.id, radioVal('fb_'+k.id)])), unclear:$('#fbUnclear').value.trim(),
+    plausibility:radioVal('fb_plaus'), plausibilityWhy:$('#fbPlausWhy').value.trim(), missing:$('#fbMissing').value.trim(),
+    sus, susScore:susScore(sus), other:$('#fbOther').value.trim()};
+  const snapshot = $('#fbAttach').checked ? configSnapshot() : null;
+  const btn=$('#fbSend'); btn.disabled=true; msg.textContent='Sending…';
+  try{
+    const ref=CAP.db.doc('feedback/'+CAP.uid);
+    let history=[];
+    try{ const snap=await ref.get(); if(snap.exists){ const d=snap.data()||{}; if(Array.isArray(d.history)) history=d.history.slice(-9); } }catch(e){}
+    history.push(entry);
+    await ref.set({latest:Object.assign({}, entry, {snapshot}), history, count:history.length, updated:entry.at});
+    msg.textContent='Thank you, your feedback was sent'+(entry.susScore!=null?` (usability score ${entry.susScore} of 100)`:'')+'.';
+  }catch(e){
+    msg.textContent = (e && e.code==='not_granted') || /denied|forbidden/i.test(String(e&&e.message)) ?
+      'Your access level does not allow sending feedback. Ask the developer to share PortFIT with you as a Contributor.' :
+      'The feedback could not be sent ('+String((e&&e.code)||'error')+'). Please try again later.';
+  }finally{ btn.disabled=false; }
+}
+async function loadResponses(){
+  const box=$('#fbResponses');
+  box.innerHTML='<div class="q">Responses (visible to editors only)</div><div id="fbRespList" class="note">Loading…</div>';
+  const list=$('#fbRespList');
+  const timer=setTimeout(()=>{ if(list.textContent==='Loading…') list.textContent='Responses could not be loaded yet.'; }, 10000);
+  CAP.db.collection('feedback').onSnapshot(async qs=>{
+    clearTimeout(timer);
+    if(qs.empty){ list.textContent='No feedback yet.'; return; }
+    const ids=qs.docs.map(d=>d.id); let ps={};
+    try{ ps = CAP.user ? await CAP.user.profiles(ids) : {}; }catch(e){}
+    const scores=qs.docs.map(d=>(d.data()||{}).latest).filter(l=>l&&l.susScore!=null).map(l=>l.susScore);
+    list.className=''; list.innerHTML='';
+    const head=document.createElement('div'); head.className='note';
+    head.textContent=`${qs.size} tester(s)`+(scores.length?` · mean usability score ${(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(0)} of 100`:'');
+    list.appendChild(head);
+    qs.docs.forEach(d=>{ const v=d.data()||{}, l=v.latest||{};
+      const el=document.createElement('div'); el.className='resp';
+      const who=document.createElement('div'); who.className='who'; who.textContent=(ps[d.id]&&ps[d.id].name)||'A tester';
+      const meta=document.createElement('div'); meta.className='meta';
+      meta.textContent=[l.role, l.at? new Date(l.at).toLocaleString():'', l.plausibility? 'plausibility '+l.plausibility:'', l.susScore!=null? 'SUS '+l.susScore:'', v.count>1? v.count+' submissions':''].filter(Boolean).join(' · ');
+      const txt=document.createElement('div'); txt.className='txt';
+      txt.textContent=[l.unclear&&('Unclear: '+l.unclear), l.plausibilityWhy&&('Plausibility: '+l.plausibilityWhy), l.missing&&('Missing: '+l.missing), l.other&&('Other: '+l.other)].filter(Boolean).join('\n');
+      el.append(who, meta, txt); list.appendChild(el); });
+  }, err=>{ clearTimeout(timer); list.textContent='Responses could not be loaded ('+String(err&&err.code)+').'; });
+}
+function showDesigner(){ $('#designerBtn').hidden=false; }
+function setDesigner(on){ const d=$('#designer'); d.classList.toggle('show', on); $('#designerBtn').classList.toggle('on', on);
+  $('#designerBtn').setAttribute('aria-pressed', on); if(on){ renderDesigner(); d.scrollIntoView({behavior:'smooth'}); } }
+function checkDesignerHash(){ if(location.hash==='#designer'){ showDesigner(); setDesigner(true); } }
+window.addEventListener('hashchange', checkDesignerHash);
+async function initCapabilities(){
+  checkDesignerHash();
+  if(!(window.claude && typeof window.claude.use==='function')){ fbStatus('Feedback is collected when PortFIT is opened on claude.ai. In this copy, please email your answers to the developer.'); return; }
+  fbStatus('Connecting…');
+  try{
+    CAP.user = await window.claude.use('user');
+    if(CAP.user){ CAP.canEdit = await CAP.user.canEdit(); if(CAP.canEdit) showDesigner(); CAP.uid = await CAP.user.id(); }
+    CAP.db = await window.claude.use('db');
+  }catch(e){}
+  if(!CAP.db || !CAP.uid){ fbStatus('Sign in to claude.ai to send feedback here, or email your answers to the developer.'); return; }
+  fbStatus('');
+  if(CAP.canEdit) loadResponses();
+}
+
+/* =====================================================================
+   11. REFRESH LOOP
+   ===================================================================== */
+let timer=null;
+function refresh(kind){
+  if(kind==='demandStructure' || kind==='demand' || kind==='all'){ renderConfig(); }
+  const res=runAll(); state.last=res;
+  renderNotices(res);
+  if(kind==='param') updateFacilitySummaries(res); else renderFacilities(res);
+  clearTimeout(timer);
+  timer=setTimeout(()=>{ const mc=runMC(); state.mc=mc; renderResults(res, mc); renderOverview(res, mc); renderAnchors(); }, kind==='param'?60:10);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  COMPILED=compileModel(MODEL);
+  if(COMPILED.errors.length){ MODEL=defaultModel(); COMPILED=compileModel(MODEL); }
+  resetPV();
+  FKEYS.forEach(f=>applyPreset(f, PRESETS[f][0].code));
+  renderStatic(); renderPort(); renderDemand(); renderEly(); setFuelColour(); renderConfig(); refresh('all');
+  renderTasks(); renderFeedbackForm(); $('#fbSend').onclick=sendFeedback; initCapabilities();
+  const bindPort=(id,k,num)=>{ $('#'+id).oninput=e=>{ state.port[k]= num? Math.max(0,+e.target.value||0) : e.target.value; renderPort(); refresh('port'); }; };
+  bindPort('portName','name'); bindPort('portLoc','loc'); bindPort('portLat','lat'); bindPort('portLon','lon');
+  bindPort('landUsed','used',true); bindPort('landCommitted','committed',true); bindPort('landPotential','potential',true);
+  $('#resType').onchange=e=>{ state.port.res=e.target.value; state.pv.resDens=pdRange('resDens')[0]; state.pv.resCF=pdRange('resCF')[0]; refresh('param'); };
+  $$('#demandMode button').forEach(b=>b.onclick=()=>{ state.demand.mode=b.dataset.mode; renderDemand(); refresh('demandStructure'); });
+  $('#saveBtn').onclick=()=>{ state.saved.push(snapshot(state.last)); if(state.saved.length>=2){ state.cmpA=state.saved[state.saved.length-2].tag; state.cmpB=state.saved[state.saved.length-1].tag; } renderSaved(); };
+  $('#clearBtn').onclick=()=>{ state.saved=[]; state.cmpA=state.cmpB=null; renderSaved(); };
+  $('#themeBtn').onclick=()=>{ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark?'light':'dark'; };
+  $('#designerBtn').onclick=()=>setDesigner(!$('#designer').classList.contains('show'));
+});
+</script>
+</body>
+</html>
